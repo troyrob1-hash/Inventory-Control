@@ -174,6 +174,7 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
   <button class="tab-btn" onclick="switchTab('waste')">🗑️ Waste Log</button>
   <button class="tab-btn" onclick="switchTab('transfer')">🔄 Transfer Log</button>
   <button class="tab-btn" onclick="switchTab('purchasing')">🧾 Purchasing / AP</button>
+  <button class="tab-btn" onclick="switchTab('analytics')">📈 Analytics</button>
 </div>
 
 <!-- DASHBOARD -->
@@ -548,6 +549,167 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
     </div>
   </div>
 </div>
+
+<!-- ANALYTICS TAB -->
+<div id="tab-analytics" class="tab-content">
+
+  <!-- Period Selector -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <h2 style="color:#1a1a1a;font-size:18px;font-weight:800;">📈 Cost & Budget Analysis</h2>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="an-year" onchange="renderAnalytics()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;"></select>
+      <select id="an-location" onchange="renderAnalytics()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+        <option value="all">All Locations</option>
+        <option>Café AZ</option><option>Café WT</option><option>Market AY</option>
+        <option>Perks N</option><option>Café Q</option><option>Market R</option><option>Café S</option>
+      </select>
+      <button class="btn btn-primary" onclick="openBudgetModal()">⚙️ Set Budgets</button>
+      <button class="btn btn-outline" onclick="exportAnalytics()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- KPI Cards Row -->
+  <div class="dash-grid" style="margin-bottom:24px;" id="an-kpi-cards"></div>
+
+  <!-- Month-by-Month Table -->
+  <div class="table-wrap" style="margin-bottom:24px;">
+    <div style="padding:16px 16px 0;display:flex;align-items:center;gap:12px;">
+      <h3 style="color:#1a1a1a;font-size:15px;font-weight:700;">📅 Monthly COGS Analysis</h3>
+      <span style="font-size:12px;color:var(--gray);margin-left:8px;">Formula: COGS = Previous Closing Inventory + Purchases − Current Closing Inventory</span>
+    </div>
+    <table style="margin-top:12px;">
+      <thead><tr>
+        <th>Month</th>
+        <th>Opening Inventory</th>
+        <th>Purchases</th>
+        <th>Closing Inventory</th>
+        <th>COGS</th>
+        <th>Budget</th>
+        <th>Variance</th>
+        <th>% of Budget</th>
+        <th>Actions</th>
+      </tr></thead>
+      <tbody id="an-monthly-tbody"></tbody>
+      <tfoot id="an-monthly-tfoot"></tfoot>
+    </table>
+  </div>
+
+  <!-- Two column charts -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;" id="an-charts-grid">
+    <!-- COGS Trend Chart -->
+    <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+      <h3 style="color:#1a1a1a;margin-bottom:16px;font-size:14px;font-weight:700;">📊 COGS vs Budget Trend</h3>
+      <div id="an-cogs-chart"></div>
+    </div>
+    <!-- Inventory Value Chart -->
+    <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+      <h3 style="color:#1a1a1a;margin-bottom:16px;font-size:14px;font-weight:700;">📦 Closing Inventory Trend</h3>
+      <div id="an-inv-chart"></div>
+    </div>
+  </div>
+
+  <!-- Budget Progress Bars -->
+  <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px;">
+    <h3 style="color:#1a1a1a;margin-bottom:16px;font-size:14px;font-weight:700;">🎯 Budget Tracking — Year to Date</h3>
+    <div id="an-budget-bars"></div>
+  </div>
+
+  <!-- Location Breakdown -->
+  <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+    <h3 style="color:#1a1a1a;margin-bottom:16px;font-size:14px;font-weight:700;">🏪 Inventory Value by Location</h3>
+    <div id="an-location-bars"></div>
+  </div>
+
+</div>
+
+<!-- BUDGET SETTINGS MODAL -->
+<div class="modal-overlay" id="budget-modal">
+  <div class="modal" style="width:620px;max-width:96vw;">
+    <h2>⚙️ Budget Settings</h2>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">Set your COGS budget targets. These will be used to track variance and show how you're trending.</p>
+
+    <!-- Tabs inside modal -->
+    <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;">
+      <button class="btn" id="bm-tab-monthly" onclick="switchBudgetTab('monthly')" style="border-radius:6px 6px 0 0;border-bottom:3px solid #F15D3B;color:#F15D3B;font-weight:700;background:white;">Monthly</button>
+      <button class="btn" id="bm-tab-weekly" onclick="switchBudgetTab('weekly')" style="border-radius:6px 6px 0 0;color:var(--gray);background:white;">Weekly</button>
+      <button class="btn" id="bm-tab-yearly" onclick="switchBudgetTab('yearly')" style="border-radius:6px 6px 0 0;color:var(--gray);background:white;">Yearly</button>
+    </div>
+
+    <!-- Monthly Budget -->
+    <div id="bm-monthly">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:12px;">Set COGS budget for each month. Leave blank to use the yearly average.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;" id="bm-monthly-inputs"></div>
+    </div>
+
+    <!-- Weekly Budget -->
+    <div id="bm-weekly" style="display:none;">
+      <div class="form-group">
+        <label>Weekly COGS Budget ($)</label>
+        <input id="bm-weekly-val" type="number" step="0.01" min="0" placeholder="e.g. 12000">
+        <div style="font-size:11px;color:var(--gray);margin-top:4px;">Auto-calculates monthly: weekly × 4.33</div>
+      </div>
+    </div>
+
+    <!-- Yearly Budget -->
+    <div id="bm-yearly" style="display:none;">
+      <div class="form-group">
+        <label>Annual COGS Budget ($)</label>
+        <input id="bm-yearly-val" type="number" step="0.01" min="0" placeholder="e.g. 650000">
+        <div style="font-size:11px;color:var(--gray);margin-top:4px;">Auto-calculates monthly budget: annual ÷ 12</div>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Annual Inventory Budget ($)</label>
+        <input id="bm-inv-budget" type="number" step="0.01" min="0" placeholder="e.g. 75000">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('budget-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBudgets()">Save Budgets</button>
+    </div>
+  </div>
+</div>
+
+<!-- MONTH DATA ENTRY MODAL -->
+<div class="modal-overlay" id="month-entry-modal">
+  <div class="modal" style="width:500px;max-width:96vw;">
+    <h2 id="me-title">Enter Month Data</h2>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">Enter inventory values to calculate COGS for this month.</p>
+    <div style="background:#fff1ed;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#92400e;">
+      <strong>Formula:</strong> COGS = Opening Inventory + Purchases − Closing Inventory
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Opening Inventory ($)</label>
+        <input id="me-opening" type="number" step="0.01" min="0" placeholder="Previous month closing" oninput="calcMECogs()">
+        <div style="font-size:11px;color:var(--gray);margin-top:3px;">= Prior month's closing inventory</div>
+      </div>
+      <div class="form-group">
+        <label>Total Purchases ($)</label>
+        <input id="me-purchases" type="number" step="0.01" min="0" placeholder="All invoices this month" oninput="calcMECogs()">
+        <div style="font-size:11px;color:var(--gray);margin-top:3px;">= Sum of all invoices paid this month</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Closing Inventory ($)</label>
+      <input id="me-closing" type="number" step="0.01" min="0" placeholder="Current physical count value" oninput="calcMECogs()">
+      <div style="font-size:11px;color:var(--gray);margin-top:3px;">= This month's physical count total</div>
+    </div>
+    <div style="background:#f0fdf4;border-radius:8px;padding:14px;margin:12px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:13px;font-weight:700;color:#1a1a1a;">Calculated COGS:</span>
+        <span id="me-cogs-result" style="font-size:22px;font-weight:900;color:#F15D3B;">$0.00</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray);margin-top:4px;" id="me-cogs-formula"></div>
+    </div>
+    <input type="hidden" id="me-month-key">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('month-entry-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMonthData()">Save</button>
+    </div>
+  </div>
+</div>
+
 <datalist id="vendor-datalist2"></datalist>
 
 <script>
@@ -1454,6 +1616,425 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 // INIT
 // ═══════════════════════════════════
 renderDashboard();
+
+// ═══════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Load/init analytics data
+let analyticsData = JSON.parse(localStorage.getItem('inv_analytics') || '{}');
+// Structure: { "2025": { "1": { opening, purchases, closing, cogs }, ... } }
+
+let budgets = JSON.parse(localStorage.getItem('inv_budgets') || '{}');
+// Structure: { weekly: 0, yearly: 0, invBudget: 0, monthly: { "1": 0, "2": 0, ... } }
+
+function saveAnalyticsData() {
+  localStorage.setItem('inv_analytics', JSON.stringify(analyticsData));
+}
+function saveBudgetData() {
+  localStorage.setItem('inv_budgets', JSON.stringify(budgets));
+}
+
+function getYears() {
+  const years = new Set(Object.keys(analyticsData));
+  years.add(String(new Date().getFullYear()));
+  years.add(String(new Date().getFullYear() - 1));
+  return [...years].sort((a,b) => b-a);
+}
+
+function getMonthBudget(year, month) {
+  // Priority: specific month budget → monthly from yearly → weekly*4.33
+  if (budgets.monthly && budgets.monthly[month]) return budgets.monthly[month];
+  if (budgets.yearly) return budgets.yearly / 12;
+  if (budgets.weekly) return budgets.weekly * 4.33;
+  return 0;
+}
+
+function getWeeklyBudget() { return budgets.weekly || 0; }
+function getYearlyBudget() { return budgets.yearly || 0; }
+
+function renderAnalytics() {
+  // Populate year selector
+  const yearSel = document.getElementById('an-year');
+  if (!yearSel) return;
+  const years = getYears();
+  const curYear = yearSel.value || String(new Date().getFullYear());
+  yearSel.innerHTML = years.map(y => `<option value="${y}" ${y===curYear?'selected':''}>${y}</option>`).join('');
+  const year = yearSel.value;
+  const yearData = analyticsData[year] || {};
+
+  // ── KPI Cards ──
+  let ytdCogs = 0, ytdPurchases = 0, ytdBudget = 0, monthsWithData = 0;
+  const currentMonth = new Date().getFullYear() === parseInt(year) ? new Date().getMonth() + 1 : 12;
+
+  for (let m = 1; m <= currentMonth; m++) {
+    const md = yearData[m] || {};
+    const cogs = md.cogs || 0;
+    const purchases = md.purchases || 0;
+    ytdCogs += cogs;
+    ytdPurchases += purchases;
+    ytdBudget += getMonthBudget(year, m);
+    if (md.closing !== undefined) monthsWithData++;
+  }
+
+  const ytdVariance = ytdCogs - ytdBudget;
+  const currentInv = Object.values(locations).reduce((s, lItems) => s + lItems.reduce((ss,it) => ss + computeTotal(it), 0), 0);
+  const weeklyBudget = getWeeklyBudget();
+  const yearlyBudget = getYearlyBudget();
+
+  const kpiContainer = document.getElementById('an-kpi-cards');
+  kpiContainer.innerHTML = `
+    <div class="loc-card" style="border-left-color:#F15D3B;">
+      <h3 style="color:#1a1a1a;">YTD COGS</h3>
+      <div class="card-total" style="color:#F15D3B;">$${ytdCogs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>${monthsWithData} months tracked</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#057a55;">
+      <h3 style="color:#1a1a1a;">YTD Budget</h3>
+      <div class="card-total" style="color:#057a55;">$${ytdBudget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>${yearlyBudget ? 'Annual: $'+yearlyBudget.toLocaleString() : 'No budget set'}</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:${ytdVariance > 0 ? '#e02424' : '#057a55'};">
+      <h3 style="color:#1a1a1a;">YTD Variance</h3>
+      <div class="card-total" style="color:${ytdVariance > 0 ? '#e02424' : '#057a55'};">${ytdVariance >= 0 ? '+' : ''}$${ytdVariance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span style="color:${ytdVariance > 0 ? '#e02424' : '#057a55'}">${ytdVariance > 0 ? '⚠️ Over budget' : '✅ Under budget'}</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#9333ea;">
+      <h3 style="color:#1a1a1a;">YTD Purchases</h3>
+      <div class="card-total" style="color:#9333ea;">$${ytdPurchases.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>From AP invoices</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#0891b2;">
+      <h3 style="color:#1a1a1a;">Current Inventory</h3>
+      <div class="card-total" style="color:#0891b2;">$${currentInv.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>Live count value</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#c27803;">
+      <h3 style="color:#1a1a1a;">Weekly Budget</h3>
+      <div class="card-total" style="color:#c27803;">${weeklyBudget ? '$'+weeklyBudget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : 'Not set'}</div>
+      <div class="card-breakdown"><span>Monthly equiv: ${weeklyBudget ? '$'+(weeklyBudget*4.33).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) : '—'}</span></div>
+    </div>`;
+
+  // ── Monthly Table ──
+  let tbody = '';
+  let totalCogs = 0, totalPurchases = 0, totalBudget = 0;
+
+  for (let m = 1; m <= 12; m++) {
+    const md = yearData[m] || {};
+    const hasData = md.closing !== undefined;
+    const cogs = md.cogs || 0;
+    const purchases = md.purchases || 0;
+    const monthBudget = getMonthBudget(year, m);
+    const variance = hasData ? cogs - monthBudget : null;
+    const pctBudget = (hasData && monthBudget > 0) ? (cogs / monthBudget * 100) : null;
+    const isFuture = m > currentMonth && parseInt(year) === new Date().getFullYear();
+
+    totalCogs += cogs;
+    totalPurchases += purchases;
+    totalBudget += monthBudget;
+
+    const varianceColor = variance === null ? '#6b7280' : variance > 0 ? '#e02424' : '#057a55';
+    const pctColor = pctBudget === null ? '#6b7280' : pctBudget > 110 ? '#e02424' : pctBudget > 100 ? '#c27803' : '#057a55';
+    const pctBg = pctBudget === null ? '' : pctBudget > 110 ? '#fde8e8' : pctBudget > 100 ? '#fdf6b2' : '#def7ec';
+
+    tbody += `<tr style="${isFuture ? 'opacity:0.4;' : ''}${m === new Date().getMonth()+1 && parseInt(year) === new Date().getFullYear() ? 'background:#fff8f5;font-weight:600;' : ''}">
+      <td><strong>${MONTHS[m-1]}</strong>${m === new Date().getMonth()+1 && parseInt(year) === new Date().getFullYear() ? ' <span style="background:#F15D3B;color:white;font-size:10px;padding:1px 6px;border-radius:8px;">CURRENT</span>' : ''}</td>
+      <td class="num">${hasData ? '$'+md.opening.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num">${hasData ? '$'+purchases.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num">${hasData ? '$'+md.closing.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-weight:700;color:#F15D3B;">${hasData ? '$'+cogs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num">${monthBudget > 0 ? '$'+monthBudget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">Not set</span>'}</td>
+      <td class="num" style="color:${varianceColor};font-weight:600;">${variance !== null ? (variance >= 0 ? '+' : '') + '$'+variance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num"><span style="background:${pctBg};color:${pctColor};padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700;">${pctBudget !== null ? pctBudget.toFixed(1)+'%' : '—'}</span></td>
+      <td><button class="btn btn-sm btn-outline" onclick="openMonthEntry('${year}',${m})" ${isFuture ? 'disabled' : ''}>${hasData ? '✏️ Edit' : '+ Enter'}</button></td>
+    </tr>`;
+  }
+
+  document.getElementById('an-monthly-tbody').innerHTML = tbody;
+
+  const totalVariance = totalCogs - totalBudget;
+  document.getElementById('an-monthly-tfoot').innerHTML = `
+    <tr style="background:#1a1a1a;color:white;font-weight:700;">
+      <td><strong>TOTAL</strong></td>
+      <td class="num"></td>
+      <td class="num">$${totalPurchases.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num"></td>
+      <td class="num" style="color:#F15D3B;">$${totalCogs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num">$${totalBudget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num" style="color:${totalVariance > 0 ? '#ff8c5a' : '#7effc4'};">${totalVariance >= 0 ? '+' : ''}$${totalVariance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num">${totalBudget > 0 ? (totalCogs/totalBudget*100).toFixed(1)+'%' : '—'}</td>
+      <td></td>
+    </tr>`;
+
+  // ── COGS vs Budget Bar Chart ──
+  renderCogsChart(year, yearData);
+
+  // ── Inventory Trend Chart ──
+  renderInvChart(year, yearData);
+
+  // ── Budget Progress Bars ──
+  renderBudgetBars(year, ytdCogs, ytdBudget, ytdPurchases);
+
+  // ── Location bars ──
+  renderLocationBars();
+}
+
+function renderCogsChart(year, yearData) {
+  const container = document.getElementById('an-cogs-chart');
+  if (!container) return;
+  const maxVal = Math.max(
+    ...Array.from({length:12},(_,i) => (yearData[i+1]||{}).cogs||0),
+    ...Array.from({length:12},(_,i) => getMonthBudget(year, i+1)),
+    1
+  );
+  let html2 = '<div style="display:flex;align-items:flex-end;gap:4px;height:160px;padding-bottom:24px;position:relative;">';
+  for (let m = 1; m <= 12; m++) {
+    const md = yearData[m] || {};
+    const cogs = md.cogs || 0;
+    const budget = getMonthBudget(year, m);
+    const cogsH = cogs > 0 ? Math.max(4, (cogs / maxVal) * 140) : 0;
+    const budgetH = budget > 0 ? Math.max(2, (budget / maxVal) * 140) : 0;
+    const over = cogs > budget && budget > 0;
+    html2 += `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;position:relative;">
+      <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:140px;">
+        <div style="flex:1;background:${over?'#e02424':'#F15D3B'};border-radius:3px 3px 0 0;height:${cogsH}px;transition:height .4s;" title="COGS: $${cogs.toFixed(0)}"></div>
+        <div style="flex:1;background:#e5e7eb;border-radius:3px 3px 0 0;height:${budgetH}px;" title="Budget: $${budget.toFixed(0)}"></div>
+      </div>
+      <div style="font-size:9px;color:#6b7280;position:absolute;bottom:0;">${MONTHS_SHORT[m-1]}</div>
+    </div>`;
+  }
+  html2 += '</div>';
+  html2 += '<div style="display:flex;gap:16px;margin-top:8px;font-size:12px;">';
+  html2 += '<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#F15D3B;border-radius:2px;display:inline-block;"></span>COGS</span>';
+  html2 += '<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#e5e7eb;border-radius:2px;display:inline-block;"></span>Budget</span>';
+  html2 += '<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#e02424;border-radius:2px;display:inline-block;"></span>Over Budget</span>';
+  html2 += '</div>';
+  container.innerHTML = html2;
+}
+
+function renderInvChart(year, yearData) {
+  const container = document.getElementById('an-inv-chart');
+  if (!container) return;
+  const vals = Array.from({length:12},(_,i) => (yearData[i+1]||{}).closing);
+  const maxVal = Math.max(...vals.filter(v=>v!=null), 1);
+  let html2 = '<div style="display:flex;align-items:flex-end;gap:6px;height:160px;padding-bottom:24px;">';
+  for (let m = 1; m <= 12; m++) {
+    const val = vals[m-1];
+    const h = val != null ? Math.max(4, (val / maxVal) * 140) : 0;
+    html2 += `<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;">
+      <div style="width:100%;background:${val != null ? '#0891b2' : '#f3f4f6'};border-radius:3px 3px 0 0;height:${h}px;transition:height .4s;" title="${val != null ? '$'+val.toFixed(0) : 'No data'}"></div>
+      <div style="font-size:9px;color:#6b7280;position:absolute;bottom:0;">${MONTHS_SHORT[m-1]}</div>
+    </div>`;
+  }
+  html2 += '</div>';
+  container.innerHTML = html2;
+}
+
+function renderBudgetBars(year, ytdCogs, ytdBudget, ytdPurchases) {
+  const container = document.getElementById('an-budget-bars');
+  if (!container) return;
+  const yearlyBudget = getYearlyBudget();
+  const weeklyBudget = getWeeklyBudget();
+  const currentMonth = new Date().getFullYear() === parseInt(year) ? new Date().getMonth() + 1 : 12;
+  const weeksElapsed = currentMonth * 4.33;
+
+  const bars = [
+    { label: 'Annual COGS vs Budget', current: ytdCogs, budget: yearlyBudget, color: '#F15D3B' },
+    { label: 'YTD Purchases vs Budget', current: ytdPurchases, budget: ytdBudget, color: '#9333ea' },
+    { label: 'Weekly COGS Run Rate', current: ytdCogs / (weeksElapsed||1), budget: weeklyBudget, color: '#c27803' },
+  ];
+
+  container.innerHTML = bars.map(b => {
+    if (!b.budget) return `<div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <strong>${b.label}</strong><span style="color:#6b7280;">No budget set — <button class="btn btn-sm btn-outline" onclick="openBudgetModal()" style="display:inline;">Set Budget</button></span>
+      </div></div>`;
+    const pct = Math.min((b.current / b.budget) * 100, 100);
+    const over = b.current > b.budget;
+    const variance = b.current - b.budget;
+    return `<div style="margin-bottom:18px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">
+        <strong style="color:#1a1a1a;">${b.label}</strong>
+        <span style="color:${over?'#e02424':'#057a55'};font-weight:700;">${over?'⚠️ Over':'✅ Under'} ${over?'+':''}$${Math.abs(variance).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+      </div>
+      <div style="background:#f3f4f6;border-radius:8px;height:28px;overflow:hidden;position:relative;">
+        <div style="height:100%;width:${pct}%;background:${over?'#e02424':b.color};border-radius:8px;transition:width .6s;display:flex;align-items:center;padding:0 10px;">
+          <span style="color:white;font-size:12px;font-weight:700;white-space:nowrap;">${pct>20?'$'+b.current.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}):''}</span>
+        </div>
+        <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:#6b7280;">${pct.toFixed(1)}% of $${b.budget.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b7280;margin-top:3px;">
+        <span>Actual: $${b.current.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+        <span>Budget: $${b.budget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLocationBars() {
+  const container = document.getElementById('an-location-bars');
+  if (!container) return;
+  const locColors = ['#F15D3B','#E8A87C','#D94E2E','#FF8C5A','#C4401F','#FF6B3D','#A83218'];
+  const locVals = Object.entries(locations).map(([name, items], i) => ({
+    name, value: items.reduce((s,it) => s+computeTotal(it), 0), color: locColors[i]
+  })).sort((a,b) => b.value - a.value);
+  const maxVal = Math.max(...locVals.map(l => l.value), 1);
+
+  container.innerHTML = locVals.map(l => `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <div style="width:100px;font-size:12px;font-weight:600;color:#1a1a1a;text-align:right;">${l.name}</div>
+      <div style="flex:1;background:#f3f4f6;border-radius:4px;height:28px;overflow:hidden;">
+        <div style="height:100%;width:${(l.value/maxVal*100)}%;background:${l.color};border-radius:4px;display:flex;align-items:center;padding:0 8px;color:white;font-size:12px;font-weight:700;transition:width .5s ease;">
+          ${(l.value/maxVal*100) > 15 ? '$'+l.value.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) : ''}
+        </div>
+      </div>
+      <div style="width:90px;font-size:12px;font-weight:700;color:${l.color};text-align:right;">$${l.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+    </div>`).join('');
+}
+
+// ── Month Entry Modal ──
+function openMonthEntry(year, month) {
+  const yd = analyticsData[year] || {};
+  const md = yd[month] || {};
+
+  document.getElementById('me-title').textContent = MONTHS[month-1] + ' ' + year + ' — COGS Entry';
+  document.getElementById('me-month-key').value = year + '_' + month;
+
+  // Auto-fill opening from prior month closing
+  const priorMonth = month > 1 ? (yd[month-1]||{}).closing : null;
+  document.getElementById('me-opening').value = md.opening !== undefined ? md.opening : (priorMonth || '');
+  document.getElementById('me-purchases').value = md.purchases !== undefined ? md.purchases : autoCalcPurchases(year, month);
+  document.getElementById('me-closing').value = md.closing !== undefined ? md.closing : '';
+  calcMECogs();
+  openModal('month-entry-modal');
+}
+
+function autoCalcPurchases(year, month) {
+  // Auto-sum paid invoices from the AP tab for that month
+  const monthStr = String(month).padStart(2,'0');
+  const yearStr = String(year);
+  const total = invoices
+    .filter(inv => inv.status === 'Paid' && inv.invoiceDate && inv.invoiceDate.startsWith(yearStr + '-' + monthStr))
+    .reduce((s, inv) => s + (inv.amount||0), 0);
+  return total > 0 ? total.toFixed(2) : '';
+}
+
+function calcMECogs() {
+  const opening = parseFloat(document.getElementById('me-opening').value) || 0;
+  const purchases = parseFloat(document.getElementById('me-purchases').value) || 0;
+  const closing = parseFloat(document.getElementById('me-closing').value) || 0;
+  const cogs = opening + purchases - closing;
+  document.getElementById('me-cogs-result').textContent = '$' + cogs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('me-cogs-formula').textContent = '$' + opening.toFixed(2) + ' + $' + purchases.toFixed(2) + ' − $' + closing.toFixed(2) + ' = $' + cogs.toFixed(2);
+}
+
+function saveMonthData() {
+  const key = document.getElementById('me-month-key').value;
+  const [year, month] = key.split('_');
+  const opening = parseFloat(document.getElementById('me-opening').value) || 0;
+  const purchases = parseFloat(document.getElementById('me-purchases').value) || 0;
+  const closing = parseFloat(document.getElementById('me-closing').value);
+  if (isNaN(closing)) { alert('Closing inventory is required'); return; }
+  const cogs = opening + purchases - closing;
+
+  if (!analyticsData[year]) analyticsData[year] = {};
+  analyticsData[year][month] = { opening, purchases, closing, cogs, updatedAt: new Date().toISOString() };
+
+  // Auto-set next month's opening
+  const nextMonth = parseInt(month) + 1;
+  if (nextMonth <= 12) {
+    if (!analyticsData[year][nextMonth]) analyticsData[year][nextMonth] = {};
+    analyticsData[year][nextMonth].opening = closing;
+  }
+
+  saveAnalyticsData();
+  closeModal('month-entry-modal');
+  renderAnalytics();
+  toast('Month data saved — COGS: $' + cogs.toFixed(2), 'green');
+}
+
+// ── Budget Modal ──
+let activeBudgetTab = 'monthly';
+
+function openBudgetModal() {
+  // Build monthly inputs
+  const monthInputs = document.getElementById('bm-monthly-inputs');
+  monthInputs.innerHTML = MONTHS.map((name, i) => `
+    <div class="form-group">
+      <label style="font-size:11px;">${name}</label>
+      <input type="number" step="0.01" min="0" placeholder="0.00"
+        id="bm-m-${i+1}" value="${budgets.monthly && budgets.monthly[i+1] ? budgets.monthly[i+1] : ''}">
+    </div>`).join('');
+
+  document.getElementById('bm-weekly-val').value = budgets.weekly || '';
+  document.getElementById('bm-yearly-val').value = budgets.yearly || '';
+  document.getElementById('bm-inv-budget').value = budgets.invBudget || '';
+  openModal('budget-modal');
+}
+
+function switchBudgetTab(tab) {
+  activeBudgetTab = tab;
+  ['monthly','weekly','yearly'].forEach(t => {
+    document.getElementById('bm-'+t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('bm-tab-'+t);
+    if (t === tab) {
+      btn.style.borderBottom = '3px solid #F15D3B';
+      btn.style.color = '#F15D3B';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.borderBottom = 'none';
+      btn.style.color = 'var(--gray)';
+      btn.style.fontWeight = '500';
+    }
+  });
+}
+
+function saveBudgets() {
+  const monthly = {};
+  for (let m = 1; m <= 12; m++) {
+    const val = parseFloat(document.getElementById('bm-m-'+m)?.value);
+    if (!isNaN(val) && val > 0) monthly[m] = val;
+  }
+  budgets = {
+    monthly,
+    weekly: parseFloat(document.getElementById('bm-weekly-val').value) || 0,
+    yearly: parseFloat(document.getElementById('bm-yearly-val').value) || 0,
+    invBudget: parseFloat(document.getElementById('bm-inv-budget').value) || 0,
+  };
+  saveBudgetData();
+  closeModal('budget-modal');
+  renderAnalytics();
+  toast('Budgets saved!', 'green');
+}
+
+function exportAnalytics() {
+  const year = document.getElementById('an-year')?.value || new Date().getFullYear();
+  const yearData = analyticsData[year] || {};
+  const headers = ['Month','Opening Inventory','Purchases','Closing Inventory','COGS','Budget','Variance','% of Budget'];
+  const rows = MONTHS.map((name, i) => {
+    const m = i + 1;
+    const md = yearData[m] || {};
+    const budget = getMonthBudget(year, m);
+    const variance = md.cogs !== undefined ? md.cogs - budget : '';
+    return [name, md.opening||'', md.purchases||'', md.closing||'', md.cogs||'', budget||'', variance, budget && md.cogs ? (md.cogs/budget*100).toFixed(1)+'%' : ''];
+  });
+  const csv = [headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`cogs-analysis-${year}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('Analytics exported!','green');
+}
+
+// Patch switchTab for analytics
+const _prevSwitchTab = window.switchTab;
+window.switchTab = function(id) {
+  _prevSwitchTab(id);
+  if (id === 'analytics') renderAnalytics();
+};
+
 </script>
 </body>
 </html>
