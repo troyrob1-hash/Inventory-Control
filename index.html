@@ -407,6 +407,149 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
   </div>
 </div>
 
+
+<!-- PURCHASING / AP TAB -->
+<div id="tab-purchasing" class="tab-content">
+  <div class="stats-bar" id="ap-stats-bar" style="margin-bottom:20px;"></div>
+  <div class="toolbar">
+    <input type="text" id="ap-search" placeholder="Search invoices, vendor, PO#..." oninput="renderPurchasing()">
+    <select id="ap-filter-status" onchange="renderPurchasing()">
+      <option value="">All Statuses</option>
+      <option value="Pending">Pending</option>
+      <option value="Approved">Approved</option>
+      <option value="Paid">Paid</option>
+      <option value="Overdue">Overdue</option>
+      <option value="Disputed">Disputed</option>
+      <option value="Void">Void</option>
+    </select>
+    <select id="ap-filter-vendor" onchange="renderPurchasing()"><option value="">All Vendors</option></select>
+    <select id="ap-filter-location" onchange="renderPurchasing()">
+      <option value="">All Locations</option>
+      <option>Cafe AZ</option><option>Cafe WT</option><option>Market AY</option>
+      <option>Perks N</option><option>Cafe Q</option><option>Market R</option><option>Cafe S</option>
+    </select>
+    <button class="btn btn-primary" onclick="openInvoiceModal()">+ Add Invoice</button>
+    <button class="btn btn-outline" onclick="exportAP()">Export CSV</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th class="sortable" onclick="sortAP('invoiceNum')">Invoice # ↕</th>
+        <th class="sortable" onclick="sortAP('vendor')">Vendor ↕</th>
+        <th class="sortable" onclick="sortAP('invoiceDate')">Invoice Date ↕</th>
+        <th class="sortable" onclick="sortAP('dueDate')">Due Date ↕</th>
+        <th class="sortable" onclick="sortAP('amount')">Amount ↕</th>
+        <th class="sortable" onclick="sortAP('amountPaid')">Paid ↕</th>
+        <th>Balance Due</th>
+        <th>Location</th>
+        <th>GL Code</th>
+        <th class="sortable" onclick="sortAP('status')">Status ↕</th>
+        <th>Actions</th>
+      </tr></thead>
+      <tbody id="ap-tbody"></tbody>
+    </table>
+    <div class="pagination" id="ap-pagination"></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT INVOICE MODAL -->
+<div class="modal-overlay" id="invoice-modal">
+  <div class="modal" style="width:580px;max-width:96vw;">
+    <h2 id="inv-modal-title">Add New Invoice</h2>
+    <div class="form-row">
+      <div class="form-group"><label>Invoice # *</label><input id="inv-num" placeholder="INV-2025-001"></div>
+      <div class="form-group"><label>PO Number</label><input id="inv-po" placeholder="Optional"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Vendor *</label><input id="inv-vendor" placeholder="e.g. Sysco" list="vendor-datalist2"></div>
+      <div class="form-group"><label>Location</label>
+        <select id="inv-location">
+          <option value="">All Locations</option>
+          <option>Cafe AZ</option><option>Cafe WT</option><option>Market AY</option>
+          <option>Perks N</option><option>Cafe Q</option><option>Market R</option><option>Cafe S</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Invoice Date *</label><input id="inv-date" type="date"></div>
+      <div class="form-group"><label>Due Date *</label><input id="inv-due" type="date"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Invoice Amount ($) *</label><input id="inv-amount" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcInvBalance()"></div>
+      <div class="form-group"><label>Amount Paid ($)</label><input id="inv-paid" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcInvBalance()"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Balance Due</label><input id="inv-balance" readonly style="background:#fef9c3;font-weight:700;color:#92400e;"></div>
+      <div class="form-group"><label>GL Code</label>
+        <select id="inv-gl">
+          <option value="12000 - Inventory - Cafeteria">12000 - Cafeteria</option>
+          <option value="12002 - Inventory - Barista">12002 - Barista</option>
+          <option value="General Expense">General Expense</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Payment Status</label>
+        <select id="inv-status">
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Paid">Paid</option>
+          <option value="Overdue">Overdue</option>
+          <option value="Disputed">Disputed</option>
+          <option value="Void">Void</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Payment Terms</label>
+        <select id="inv-method">
+          <option value="">-- Select --</option>
+          <option>Check</option><option>ACH / Wire</option><option>Credit Card</option>
+          <option>Net 30</option><option>Net 15</option><option>COD</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Description / Line Items</label>
+      <textarea id="inv-desc" rows="3" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical;" placeholder="Weekly produce order, chemicals, supplies..."></textarea>
+    </div>
+    <div class="form-group"><label>Notes / Memo</label>
+      <input id="inv-notes" placeholder="Internal notes, dispute reason, etc.">
+    </div>
+    <div id="inv-payment-history" style="display:none;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px;">Payment History</div>
+      <div id="inv-payments-list" style="max-height:100px;overflow-y:auto;background:var(--gray-light);border-radius:6px;padding:8px;font-size:12px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('invoice-modal')">Cancel</button>
+      <button class="btn btn-success" id="inv-save-btn" onclick="saveInvoice()">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal" style="width:420px;max-width:96vw;">
+    <h2>Record Payment</h2>
+    <div id="pm-invoice-info" style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Payment Date</label><input id="pm-date" type="date"></div>
+      <div class="form-group"><label>Payment Amount ($)</label><input id="pm-amount" type="number" step="0.01" min="0" placeholder="0.00"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Payment Method</label>
+        <select id="pm-method">
+          <option>Check</option><option>ACH / Wire</option><option>Credit Card</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Reference / Check #</label><input id="pm-ref" placeholder="CHK-1042"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><input id="pm-notes" placeholder="Optional payment notes"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('payment-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="savePayment()">Record Payment</button>
+    </div>
+  </div>
+</div>
+<datalist id="vendor-datalist2"></datalist>
+
 <script>
 // ═══════════════════════════════════
 // DATA
@@ -967,148 +1110,6 @@ function deleteTransfer(id) {
   persist(); renderTransferLog(); toast('Entry deleted');
 }
 
-
-<!-- PURCHASING / AP TAB -->
-<div id="tab-purchasing" class="tab-content">
-  <div class="stats-bar" id="ap-stats-bar" style="margin-bottom:20px;"></div>
-  <div class="toolbar">
-    <input type="text" id="ap-search" placeholder="Search invoices, vendor, PO#..." oninput="renderPurchasing()">
-    <select id="ap-filter-status" onchange="renderPurchasing()">
-      <option value="">All Statuses</option>
-      <option value="Pending">Pending</option>
-      <option value="Approved">Approved</option>
-      <option value="Paid">Paid</option>
-      <option value="Overdue">Overdue</option>
-      <option value="Disputed">Disputed</option>
-      <option value="Void">Void</option>
-    </select>
-    <select id="ap-filter-vendor" onchange="renderPurchasing()"><option value="">All Vendors</option></select>
-    <select id="ap-filter-location" onchange="renderPurchasing()">
-      <option value="">All Locations</option>
-      <option>Cafe AZ</option><option>Cafe WT</option><option>Market AY</option>
-      <option>Perks N</option><option>Cafe Q</option><option>Market R</option><option>Cafe S</option>
-    </select>
-    <button class="btn btn-primary" onclick="openInvoiceModal()">+ Add Invoice</button>
-    <button class="btn btn-outline" onclick="exportAP()">Export CSV</button>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th class="sortable" onclick="sortAP('invoiceNum')">Invoice # ↕</th>
-        <th class="sortable" onclick="sortAP('vendor')">Vendor ↕</th>
-        <th class="sortable" onclick="sortAP('invoiceDate')">Invoice Date ↕</th>
-        <th class="sortable" onclick="sortAP('dueDate')">Due Date ↕</th>
-        <th class="sortable" onclick="sortAP('amount')">Amount ↕</th>
-        <th class="sortable" onclick="sortAP('amountPaid')">Paid ↕</th>
-        <th>Balance Due</th>
-        <th>Location</th>
-        <th>GL Code</th>
-        <th class="sortable" onclick="sortAP('status')">Status ↕</th>
-        <th>Actions</th>
-      </tr></thead>
-      <tbody id="ap-tbody"></tbody>
-    </table>
-    <div class="pagination" id="ap-pagination"></div>
-  </div>
-</div>
-
-<!-- ADD/EDIT INVOICE MODAL -->
-<div class="modal-overlay" id="invoice-modal">
-  <div class="modal" style="width:580px;max-width:96vw;">
-    <h2 id="inv-modal-title">Add New Invoice</h2>
-    <div class="form-row">
-      <div class="form-group"><label>Invoice # *</label><input id="inv-num" placeholder="INV-2025-001"></div>
-      <div class="form-group"><label>PO Number</label><input id="inv-po" placeholder="Optional"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Vendor *</label><input id="inv-vendor" placeholder="e.g. Sysco" list="vendor-datalist2"></div>
-      <div class="form-group"><label>Location</label>
-        <select id="inv-location">
-          <option value="">All Locations</option>
-          <option>Cafe AZ</option><option>Cafe WT</option><option>Market AY</option>
-          <option>Perks N</option><option>Cafe Q</option><option>Market R</option><option>Cafe S</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Invoice Date *</label><input id="inv-date" type="date"></div>
-      <div class="form-group"><label>Due Date *</label><input id="inv-due" type="date"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Invoice Amount ($) *</label><input id="inv-amount" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcInvBalance()"></div>
-      <div class="form-group"><label>Amount Paid ($)</label><input id="inv-paid" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcInvBalance()"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Balance Due</label><input id="inv-balance" readonly style="background:#fef9c3;font-weight:700;color:#92400e;"></div>
-      <div class="form-group"><label>GL Code</label>
-        <select id="inv-gl">
-          <option value="12000 - Inventory - Cafeteria">12000 - Cafeteria</option>
-          <option value="12002 - Inventory - Barista">12002 - Barista</option>
-          <option value="General Expense">General Expense</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Payment Status</label>
-        <select id="inv-status">
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Paid">Paid</option>
-          <option value="Overdue">Overdue</option>
-          <option value="Disputed">Disputed</option>
-          <option value="Void">Void</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Payment Terms</label>
-        <select id="inv-method">
-          <option value="">-- Select --</option>
-          <option>Check</option><option>ACH / Wire</option><option>Credit Card</option>
-          <option>Net 30</option><option>Net 15</option><option>COD</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group"><label>Description / Line Items</label>
-      <textarea id="inv-desc" rows="3" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical;" placeholder="Weekly produce order, chemicals, supplies..."></textarea>
-    </div>
-    <div class="form-group"><label>Notes / Memo</label>
-      <input id="inv-notes" placeholder="Internal notes, dispute reason, etc.">
-    </div>
-    <div id="inv-payment-history" style="display:none;margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px;">Payment History</div>
-      <div id="inv-payments-list" style="max-height:100px;overflow-y:auto;background:var(--gray-light);border-radius:6px;padding:8px;font-size:12px;"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('invoice-modal')">Cancel</button>
-      <button class="btn btn-success" id="inv-save-btn" onclick="saveInvoice()">Save Invoice</button>
-    </div>
-  </div>
-</div>
-
-<!-- PAYMENT MODAL -->
-<div class="modal-overlay" id="payment-modal">
-  <div class="modal" style="width:420px;max-width:96vw;">
-    <h2>Record Payment</h2>
-    <div id="pm-invoice-info" style="background:var(--blue-light);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;"></div>
-    <div class="form-row">
-      <div class="form-group"><label>Payment Date</label><input id="pm-date" type="date"></div>
-      <div class="form-group"><label>Payment Amount ($)</label><input id="pm-amount" type="number" step="0.01" min="0" placeholder="0.00"></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label>Payment Method</label>
-        <select id="pm-method">
-          <option>Check</option><option>ACH / Wire</option><option>Credit Card</option><option>Other</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Reference / Check #</label><input id="pm-ref" placeholder="CHK-1042"></div>
-    </div>
-    <div class="form-group"><label>Notes</label><input id="pm-notes" placeholder="Optional payment notes"></div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('payment-modal')">Cancel</button>
-      <button class="btn btn-success" onclick="savePayment()">Record Payment</button>
-    </div>
-  </div>
-</div>
-<datalist id="vendor-datalist2"></datalist>
 
 // ═══════════════════════════════════
 // PURCHASING / AP
