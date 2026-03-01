@@ -31,6 +31,13 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #
 .tab-btn { padding: 12px 16px; border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--gray); white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s; }
 .tab-btn:hover { color: #F15D3B; background: #fff1ed; }
 .tab-btn.active { color: #F15D3B; border-bottom-color: #F15D3B; font-weight: 700; }
+.loc-toggle-btn {
+  padding: 8px 16px; border: 1px solid var(--border); border-radius: 20px;
+  background: white; cursor: pointer; font-size: 13px; font-weight: 500;
+  color: var(--gray); transition: all .15s; white-space: nowrap;
+}
+.loc-toggle-btn:hover { border-color: #F15D3B; color: #F15D3B; background: #fff1ed; }
+.loc-toggle-btn.active { background: #F15D3B; border-color: #F15D3B; color: white; font-weight: 700; }
 
 /* MAIN CONTENT */
 .tab-content { display: none; padding: 20px; }
@@ -144,6 +151,31 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
 
 /* AP / PURCHASING */
 .ap-overdue-row { background: #fff5f5 !important; }
+
+/* ── Period Selector ── */
+.period-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: #1a1a1a; border-radius: 8px;
+  padding: 10px 16px; margin-bottom: 18px;
+}
+.period-bar label {
+  font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.45);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px;
+}
+.period-select {
+  padding: 5px 10px; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+  font-size: 13px; background: rgba(255,255,255,0.08); cursor: pointer;
+  color: white; min-width: 100px;
+}
+.period-select:focus { outline: none; border-color: #F15D3B; }
+.period-select option { background: #1a1a1a; color: white; }
+.period-select:disabled { opacity: 0.35; cursor: not-allowed; }
+.period-divider { color: rgba(255,255,255,0.2); font-size: 18px; font-weight: 300; }
+.period-badge {
+  margin-left: auto; background: #F15D3B; color: white;
+  font-size: 11px; font-weight: 700; padding: 3px 12px;
+  border-radius: 10px; white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -162,23 +194,30 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
 </div>
 
 <div class="tab-nav" id="tab-nav">
-  <button class="tab-btn active" onclick="switchTab('dashboard')">🏠 Dashboard</button>
+  <button class="tab-btn active" onclick="switchTab('analytics')">📈 Analytics</button>
+  <button class="tab-btn" onclick="switchTab('sales')">💵 Weekly Sales</button>
+  <button class="tab-btn" onclick="switchTab('dashboard')">🏠 Dashboard</button>
   <button class="tab-btn" onclick="switchTab('items')">📋 Master Items</button>
-  <button class="tab-btn" onclick="switchTab('loc-Café AZ')">☕ Café AZ</button>
-  <button class="tab-btn" onclick="switchTab('loc-Café WT')">☕ Café WT</button>
-  <button class="tab-btn" onclick="switchTab('loc-Market AY')">🛒 Market AY</button>
-  <button class="tab-btn" onclick="switchTab('loc-Perks N')">☕ Perks N</button>
-  <button class="tab-btn" onclick="switchTab('loc-Café Q')">☕ Café Q</button>
-  <button class="tab-btn" onclick="switchTab('loc-Market R')">🛒 Market R</button>
-  <button class="tab-btn" onclick="switchTab('loc-Café S')">☕ Café S</button>
+  <button class="tab-btn" onclick="switchTab('inventory')">📦 Inventory</button>
   <button class="tab-btn" onclick="switchTab('waste')">🗑️ Waste Log</button>
   <button class="tab-btn" onclick="switchTab('transfer')">🔄 Transfer Log</button>
   <button class="tab-btn" onclick="switchTab('purchasing')">🧾 Purchasing / AP</button>
-  <button class="tab-btn" onclick="switchTab('analytics')">📈 Analytics</button>
 </div>
 
 <!-- DASHBOARD -->
-<div id="tab-dashboard" class="tab-content active">
+<div id="tab-dashboard" class="tab-content">
+  <!-- Period Selector -->
+  <div class="period-bar" id="period-bar-dashboard">
+    <label>Year</label>
+    <select class="period-select" id="pb-year-dashboard" onchange="onPeriodYear(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Month</label>
+    <select class="period-select" id="pb-month-dashboard" onchange="onPeriodMonth(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Week</label>
+    <select class="period-select" id="pb-week-dashboard" onchange="onPeriodWeek(this.value)"></select>
+    <span class="period-badge" id="pb-badge-dashboard"></span>
+  </div>
   <div class="dash-grid" id="dash-cards"></div>
   <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
     <h3 style="margin-bottom:14px;color:var(--header);">📊 Inventory by Location</h3>
@@ -221,17 +260,56 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
 </div>
 
 <!-- LOCATION TABS (generated dynamically) -->
-<div id="tab-loc-Café_AZ" class="tab-content"></div>
-<div id="tab-loc-Café_WT" class="tab-content"></div>
-<div id="tab-loc-Market_AY" class="tab-content"></div>
-<div id="tab-loc-Perks_N" class="tab-content"></div>
-<div id="tab-loc-Café_Q" class="tab-content"></div>
-<div id="tab-loc-Market_R" class="tab-content"></div>
-<div id="tab-loc-Café_S" class="tab-content"></div>
+<div id="tab-inventory" class="tab-content">
+
+  <!-- Period Selector -->
+  <div class="period-bar" id="period-bar-inventory">
+    <label>Year</label>
+    <select class="period-select" id="pb-year-inventory" onchange="onPeriodYear(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Month</label>
+    <select class="period-select" id="pb-month-inventory" onchange="onPeriodMonth(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Week</label>
+    <select class="period-select" id="pb-week-inventory" onchange="onPeriodWeek(this.value)"></select>
+    <span class="period-badge" id="pb-badge-inventory"></span>
+  </div>
+  <!-- Location toggle bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;" id="loc-toggle-bar">
+      <button class="loc-toggle-btn active" onclick="switchLocation('Café AZ')">☕ Café AZ</button>
+    <button class="loc-toggle-btn" onclick="switchLocation('Café WT')">☕ Café WT</button>
+    <button class="loc-toggle-btn" onclick="switchLocation('Market AY')">🛒 Market AY</button>
+    <button class="loc-toggle-btn" onclick="switchLocation('Perks N')">☕ Perks N</button>
+    <button class="loc-toggle-btn" onclick="switchLocation('Café Q')">☕ Café Q</button>
+    <button class="loc-toggle-btn" onclick="switchLocation('Market R')">🛒 Market R</button>
+    <button class="loc-toggle-btn" onclick="switchLocation('Café S')">☕ Café S</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+      <span id="inv-active-loc" style="font-size:13px;font-weight:700;color:#F15D3B;"></span>
+    </div>
+  </div>
+
+  <!-- Location content renders here -->
+  <div id="inv-loc-content"></div>
+
+</div>
 
 
 <!-- WASTE LOG -->
 <div id="tab-waste" class="tab-content">
+  <!-- Period Selector -->
+  <div class="period-bar" id="period-bar-waste">
+    <label>Year</label>
+    <select class="period-select" id="pb-year-waste" onchange="onPeriodYear(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Month</label>
+    <select class="period-select" id="pb-month-waste" onchange="onPeriodMonth(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Week</label>
+    <select class="period-select" id="pb-week-waste" onchange="onPeriodWeek(this.value)"></select>
+    <span class="period-badge" id="pb-badge-waste"></span>
+  </div>
   <div class="toolbar">
     <h2 style="color:var(--header);">🗑️ Waste Log</h2>
     <button class="btn btn-danger" onclick="addWasteEntry()">+ Log Waste</button>
@@ -250,6 +328,18 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
 
 <!-- TRANSFER LOG -->
 <div id="tab-transfer" class="tab-content">
+  <!-- Period Selector -->
+  <div class="period-bar" id="period-bar-transfer">
+    <label>Year</label>
+    <select class="period-select" id="pb-year-transfer" onchange="onPeriodYear(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Month</label>
+    <select class="period-select" id="pb-month-transfer" onchange="onPeriodMonth(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Week</label>
+    <select class="period-select" id="pb-week-transfer" onchange="onPeriodWeek(this.value)"></select>
+    <span class="period-badge" id="pb-badge-transfer"></span>
+  </div>
   <div class="toolbar">
     <h2 style="color:var(--header);">🔄 Transfer Log</h2>
     <button class="btn btn-primary" onclick="addTransferEntry()">+ Log Transfer</button>
@@ -411,6 +501,18 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
 
 <!-- PURCHASING / AP TAB -->
 <div id="tab-purchasing" class="tab-content">
+  <!-- Period Selector -->
+  <div class="period-bar" id="period-bar-purchasing">
+    <label>Year</label>
+    <select class="period-select" id="pb-year-purchasing" onchange="onPeriodYear(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Month</label>
+    <select class="period-select" id="pb-month-purchasing" onchange="onPeriodMonth(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Week</label>
+    <select class="period-select" id="pb-week-purchasing" onchange="onPeriodWeek(this.value)"></select>
+    <span class="period-badge" id="pb-badge-purchasing"></span>
+  </div>
   <div class="stats-bar" id="ap-stats-bar" style="margin-bottom:20px;"></div>
   <div class="toolbar">
     <input type="text" id="ap-search" placeholder="Search invoices, vendor, PO#..." oninput="renderPurchasing()">
@@ -551,13 +653,26 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
 </div>
 
 <!-- ANALYTICS TAB -->
-<div id="tab-analytics" class="tab-content">
+<div id="tab-analytics" class="tab-content active">
+  <!-- Period Selector -->
+  <div class="period-bar" id="period-bar-analytics">
+    <label>Year</label>
+    <select class="period-select" id="pb-year-analytics" onchange="onPeriodYear(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Month</label>
+    <select class="period-select" id="pb-month-analytics" onchange="onPeriodMonth(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Week</label>
+    <select class="period-select" id="pb-week-analytics" onchange="onPeriodWeek(this.value)"></select>
+    <span class="period-badge" id="pb-badge-analytics"></span>
+  </div>
+
 
   <!-- Period Selector -->
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
     <h2 style="color:#1a1a1a;font-size:18px;font-weight:800;">📈 Cost & Budget Analysis</h2>
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <select id="an-year" onchange="renderAnalytics()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;"></select>
+      <select id="an-year" onchange="periodState.year=this.value; periodState.month='all'; periodState.week='all'; renderAnalytics(); renderPL()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;"></select>
       <select id="an-location" onchange="renderAnalytics()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
         <option value="all">All Locations</option>
         <option>Café AZ</option><option>Café WT</option><option>Market AY</option>
@@ -614,12 +729,660 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
     <div id="an-budget-bars"></div>
   </div>
 
+  <!-- Labor Costs Section -->
+  <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <h3 style="color:#1a1a1a;font-size:14px;font-weight:700;">👥 Labor Costs vs Budget</h3>
+      <button class="btn btn-sm btn-outline" onclick="openLaborModal()" style="margin-left:auto;">+ Enter Labor Data</button>
+    </div>
+    <div id="an-labor-kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="an-labor-grid">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">Monthly Labor vs Budget</div>
+        <div id="an-labor-chart"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">YTD Labor Budget Tracking</div>
+        <div id="an-labor-budget-bars"></div>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">Monthly Labor Detail</div>
+      <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
+        <table>
+          <thead><tr style="background:#1a1a1a;">
+            <th>Month</th>
+            <th>Regular Hours</th>
+            <th>OT Hours</th>
+            <th>Regular Pay</th>
+            <th>OT Pay</th>
+            <th>Benefits</th>
+            <th>Total Labor</th>
+            <th>Labor Budget</th>
+            <th>Variance</th>
+            <th>Labor %</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="an-labor-tbody"></tbody>
+          <tfoot id="an-labor-tfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- Location Breakdown -->
   <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
     <h3 style="color:#1a1a1a;margin-bottom:16px;font-size:14px;font-weight:700;">🏪 Inventory Value by Location</h3>
     <div id="an-location-bars"></div>
   </div>
 
+  <!-- ═══════════════════════════════════════ -->
+  <!-- P&L STATEMENT                          -->
+  <!-- ═══════════════════════════════════════ -->
+  <div style="background:white;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-top:24px;overflow:hidden;">
+
+    <!-- P&L Header -->
+    <div style="background:#1a1a1a;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="color:white;font-size:18px;font-weight:800;">📊 Profit & Loss Statement</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:12px;margin-top:3px;">Weekly Close → Monthly Period → Annual — Budget vs Actual by GL Code</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:0;border:1px solid rgba(255,255,255,0.2);border-radius:6px;overflow:hidden;">
+          <button id="pl-view-week" onclick="setPLView('week')" style="padding:7px 14px;font-size:12px;font-weight:700;background:rgba(241,93,59,0.8);color:white;border:none;cursor:pointer;">📅 Week</button>
+          <button id="pl-view-month" onclick="setPLView('month')" style="padding:7px 14px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;cursor:pointer;">📆 Month</button>
+          <button id="pl-view-year" onclick="setPLView('year')" style="padding:7px 14px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border:none;cursor:pointer;">📊 Year</button>
+        </div>
+        <select id="pl-period" onchange="renderPL()" style="padding:7px 12px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-size:13px;background:rgba(255,255,255,0.1);color:white;min-width:160px;">
+          <option value="ytd">All Weeks (YTD)</option>
+        </select>
+        <button class="btn btn-sm" onclick="openWeeklyCloseModal()" style="background:rgba(241,93,59,0.9);color:white;border:none;font-weight:700;">🔒 Close Week</button>
+        <button class="btn btn-sm" onclick="exportPL()" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);">⬇ Export</button>
+
+    
+    <!-- Period pill nav -->
+    <div style="background:#111;padding:8px 24px;display:flex;gap:8px;align-items:center;overflow-x:auto;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <span style="color:rgba(255,255,255,0.35);font-size:11px;white-space:nowrap;text-transform:uppercase;letter-spacing:.5px;">Jump to:</span>
+      <div id="pl-period-pills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+
+    <!-- P&L Legend -->
+    <div style="background:#f9fafb;padding:10px 24px;border-bottom:1px solid var(--border);display:flex;gap:20px;font-size:12px;flex-wrap:wrap;">
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;background:#1a1a1a;border-radius:2px;display:inline-block;"></span>Actual</span>
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;background:#e5e7eb;border-radius:2px;display:inline-block;border:1px dashed #9ca3af;"></span>Budget</span>
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;background:#def7ec;border-radius:2px;display:inline-block;"></span>Under Budget ✅</span>
+      <span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;background:#fde8e8;border-radius:2px;display:inline-block;"></span>Over Budget ⚠️</span>
+      <span id="pl-closed-weeks-badge" style="margin-left:auto;font-weight:700;color:#6366f1;"></span>
+    </div>
+
+    <!-- P&L Table -->
+    <div style="overflow-x:auto;">
+      <table id="pl-table" style="width:100%;border-collapse:collapse;min-width:700px;">
+        <thead id="pl-thead"></thead>
+        <tbody id="pl-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- CLOSE WEEK MODAL -->
+<div class="modal-overlay" id="close-week-modal">
+  <div class="modal" style="width:580px;max-width:96vw;">
+    <h2>📒 Close the Books — Weekly</h2>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">Snapshot your inventory and lock in the week's numbers. This creates a permanent weekly P&L record.</p>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Week Start Date *</label>
+        <input id="cw-week-start" type="date" oninput="cwAutoFill()">
+      </div>
+      <div class="form-group">
+        <label>Week End Date *</label>
+        <input id="cw-week-end" type="date">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Week #</label>
+        <input id="cw-week-num" type="number" min="1" max="53" placeholder="Auto">
+      </div>
+      <div class="form-group">
+        <label>Period (Month)</label>
+        <select id="cw-month">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">💰 Revenue (from Weekly Sales entries)</div>
+      <div id="cw-revenue-preview" style="font-size:13px;color:#374151;"></div>
+    </div>
+
+    <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">📦 Inventory Snapshot</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Opening Inventory ($)</label>
+          <input id="cw-opening-inv" type="number" step="0.01" min="0" placeholder="Auto-filled from prior close">
+        </div>
+        <div class="form-group">
+          <label>Closing Inventory ($) <span style="font-size:11px;color:#F15D3B;font-weight:600;">← key entry</span></label>
+          <input id="cw-closing-inv" type="number" step="0.01" min="0" placeholder="Count & enter" oninput="cwCalc()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Purchases This Week ($)</label>
+          <input id="cw-purchases" type="number" step="0.01" min="0" placeholder="Auto-pulled from AP" oninput="cwCalc()">
+        </div>
+        <div class="form-group">
+          <label>COGS Preview</label>
+          <div id="cw-cogs-preview" style="padding:8px 12px;background:#fff1ed;border-radius:6px;font-weight:800;color:#F15D3B;font-size:14px;margin-top:22px;">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">👥 Labor This Week ($)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Regular Pay</label>
+          <input id="cw-labor-reg" type="number" step="0.01" min="0" placeholder="0.00" oninput="cwCalc()">
+        </div>
+        <div class="form-group">
+          <label>Overtime Pay</label>
+          <input id="cw-labor-ot" type="number" step="0.01" min="0" placeholder="0.00" oninput="cwCalc()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Benefits / Taxes</label>
+          <input id="cw-labor-benefits" type="number" step="0.01" min="0" placeholder="0.00" oninput="cwCalc()">
+        </div>
+        <div class="form-group">
+          <label>Total Labor Preview</label>
+          <div id="cw-labor-preview" style="padding:8px 12px;background:#f5f3ff;border-radius:6px;font-weight:800;color:#6366f1;font-size:14px;margin-top:22px;">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div id="cw-summary" style="background:#1a1a1a;border-radius:8px;padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;margin-bottom:12px;">
+      <div><div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">Revenue</div><div id="cws-rev" style="font-size:16px;font-weight:800;color:#F15D3B;">$0</div></div>
+      <div><div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">COGS</div><div id="cws-cogs" style="font-size:16px;font-weight:800;color:#fcd34d;">$0</div></div>
+      <div><div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">Labor</div><div id="cws-labor" style="font-size:16px;font-weight:800;color:#a5b4fc;">$0</div></div>
+      <div style="border-left:1px solid rgba(255,255,255,0.15);"><div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">Net Income</div><div id="cws-net" style="font-size:16px;font-weight:900;color:white;">$0</div></div>
+    </div>
+
+    <div class="form-group">
+      <label>Notes</label>
+      <input id="cw-notes" placeholder="e.g. Holiday week, inventory adjustment, staff changes...">
+    </div>
+    <input type="hidden" id="cw-editing-id">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('close-week-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveWeekClose()">📒 Close the Books</button>
+    </div>
+  </div>
+</div>
+
+<!-- WEEKLY CLOSE MODAL -->
+<div class="modal-overlay" id="weekly-close-modal">
+  <div class="modal" style="width:680px;max-width:96vw;max-height:90vh;overflow-y:auto;">
+    <h2>📅 Close the Books — Weekly</h2>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">Lock in this week's P&L. Once closed, this week becomes a permanent record used in monthly and yearly roll-ups.</p>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Week Start *</label>
+        <input id="wcm-week-start" type="date" oninput="wcmAutoFill()">
+      </div>
+      <div class="form-group">
+        <label>Week End</label>
+        <input id="wcm-week-end" type="date">
+      </div>
+      <div class="form-group">
+        <label>Week #</label>
+        <input id="wcm-week-num" type="number" min="1" max="53" placeholder="Auto">
+      </div>
+    </div>
+
+    <!-- SALES SECTION -->
+    <div style="background:#fff8f5;border:1px solid #fdd0c0;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#F15D3B;text-transform:uppercase;margin-bottom:10px;">💰 Revenue</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label style="font-size:11px;">Total Café Sales ($)</label>
+          <input id="wcm-sale-cafe" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;">GL 12000</div>
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Total Barista Sales ($)</label>
+          <input id="wcm-sale-barista" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;">GL 12002</div>
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Total Retail Sales ($)</label>
+          <input id="wcm-sale-retail" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Catering (all streams) ($)</label>
+          <input id="wcm-sale-catering" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+        <div class="form-group" style="grid-column:span 2;">
+          <label style="font-size:11px;">Sales Budget This Week ($)</label>
+          <input id="wcm-sale-budget" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#F15D3B;text-align:right;">Total Sales: <span id="wcm-sales-total">$0.00</span></div>
+    </div>
+
+    <!-- COGS SECTION -->
+    <div style="background:#fdf6b2;border:1px solid #e3a008;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#c27803;text-transform:uppercase;margin-bottom:10px;">🛒 Cost of Goods Sold</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label style="font-size:11px;">Opening Inventory ($)</label>
+          <input id="wcm-inv-open" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Purchases This Week ($)</label>
+          <input id="wcm-purchases" type="number" step="0.01" min="0" placeholder="Auto-fill from AP" oninput="wcmCalc()">
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;"><a href="#" onclick="wcmFillPurchases()" style="color:#F15D3B;">Pull from AP invoices</a></div>
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Closing Inventory ($)</label>
+          <input id="wcm-inv-close" type="number" step="0.01" min="0" placeholder="Physical count" oninput="wcmCalc()">
+          <div style="font-size:10px;color:#9ca3af;margin-top:2px;"><a href="#" onclick="wcmFillCurrentInv()" style="color:#F15D3B;">Use current system value</a></div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#c27803;text-align:right;">COGS = Opening + Purchases − Closing: <span id="wcm-cogs-total">$0.00</span></div>
+    </div>
+
+    <!-- LABOR SECTION -->
+    <div style="background:#ede9fe;border:1px solid #a78bfa;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#6d28d9;text-transform:uppercase;margin-bottom:10px;">👥 Labor Costs</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label style="font-size:11px;">Regular Pay ($)</label>
+          <input id="wcm-labor-reg" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Overtime Pay ($)</label>
+          <input id="wcm-labor-ot" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Benefits / Taxes ($)</label>
+          <input id="wcm-labor-benefits" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+        <div class="form-group">
+          <label style="font-size:11px;">Other Labor ($)</label>
+          <input id="wcm-labor-other" type="number" step="0.01" min="0" placeholder="0.00" oninput="wcmCalc()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:11px;color:#6d28d9;">Labor Budget: <span id="wcm-labor-budget-display" style="font-weight:700;">—</span></div>
+        <div style="font-size:12px;font-weight:800;color:#6d28d9;">Total Labor: <span id="wcm-labor-total">$0.00</span></div>
+      </div>
+    </div>
+
+    <!-- LIVE P&L SUMMARY -->
+    <div style="background:#1a1a1a;border-radius:8px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:12px;text-align:center;">Live P&L Preview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;text-align:center;">
+        <div><div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;">Revenue</div><div id="wcm-p-sales" style="font-size:16px;font-weight:800;color:#F15D3B;">$0</div></div>
+        <div><div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;">COGS</div><div id="wcm-p-cogs" style="font-size:16px;font-weight:800;color:#fbbf24;">$0</div></div>
+        <div><div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;">Labor</div><div id="wcm-p-labor" style="font-size:16px;font-weight:800;color:#a5b4fc;">$0</div></div>
+        <div style="border-left:1px solid rgba(255,255,255,0.15);padding-left:12px;">
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;">Net Income</div>
+          <div id="wcm-p-net" style="font-size:18px;font-weight:900;color:white;">$0</div>
+          <div id="wcm-p-margin" style="font-size:11px;color:rgba(255,255,255,0.5);">0% margin</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notes / Highlights</label>
+      <input id="wcm-notes" placeholder="e.g. Catering event, short week, holiday...">
+    </div>
+    <input type="hidden" id="wcm-editing-key">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('weekly-close-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeWeekBooks()" style="font-weight:800;">🔒 Close the Books</button>
+    </div>
+  </div>
+</div>
+
+<!-- P&L SALES ENTRY MODAL -->
+<div class="modal-overlay" id="pl-sales-modal">
+  <div class="modal" style="width:480px;max-width:96vw;">
+    <h2>💰 Enter Sales / Revenue</h2>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">Enter monthly sales revenue to calculate cost percentages in the P&L.</p>
+    <div id="pl-sales-inputs"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('pl-sales-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePLSales()">Save</button>
+    </div>
+  </div>
+</div>
+
+</div></div><!-- /tab-analytics end -->
+
+<!-- WEEKLY SALES TAB -->
+<div id="tab-sales" class="tab-content">
+  <!-- Period Selector -->
+  <div class="period-bar" id="period-bar-sales">
+    <label>Year</label>
+    <select class="period-select" id="pb-year-sales" onchange="onPeriodYear(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Month</label>
+    <select class="period-select" id="pb-month-sales" onchange="onPeriodMonth(this.value)"></select>
+    <span class="period-divider">›</span>
+    <label>Week</label>
+    <select class="period-select" id="pb-week-sales" onchange="onPeriodWeek(this.value)"></select>
+    <span class="period-badge" id="pb-badge-sales"></span>
+  </div>
+
+
+  <!-- Toolbar -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <h2 style="color:#1a1a1a;font-size:18px;font-weight:800;">💵 Weekly Sales</h2>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="sales-year" onchange="periodState.year=this.value; periodState.month='all'; periodState.week='all'; renderSalesTab()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;"></select>
+      <select id="sales-location-filter" onchange="renderSalesTab()" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+        <option value="all">All Locations</option>
+        <option>Café AZ</option><option>Café WT</option><option>Market AY</option>
+        <option>Perks N</option><option>Café Q</option><option>Market R</option><option>Café S</option>
+      </select>
+      <button class="btn btn-primary" onclick="openSalesEntryModal()">+ Enter Sales</button>
+      <button class="btn btn-outline" onclick="exportSalesCSV()">⬇ Export</button>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="dash-grid" id="sales-kpi-cards" style="margin-bottom:24px;"></div>
+
+  <!-- Weekly Bar Chart -->
+  <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h3 style="color:#1a1a1a;font-size:14px;font-weight:700;">📊 Weekly Sales Trend</h3>
+      <div style="display:flex;gap:8px;">
+        <select id="sales-chart-type" onchange="renderSalesTab()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;">
+          <option value="weekly">By Week</option>
+          <option value="monthly">By Month</option>
+        </select>
+      </div>
+    </div>
+    <div id="sales-bar-chart" style="overflow-x:auto;"></div>
+    <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;flex-wrap:wrap;" id="sales-chart-legend"></div>
+  </div>
+
+  <!-- Month-by-Month Summary -->
+  <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px;">
+    <h3 style="color:#1a1a1a;font-size:14px;font-weight:700;margin-bottom:16px;">📅 Monthly Sales Summary</h3>
+    <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
+      <table>
+        <thead><tr>
+          <th>Month</th>
+          <th>☕ Café Sales</th>
+          <th>🥤 Barista Sales</th>
+          <th>🛍️ Retail Sales</th>
+          <th>🍽️ Total Catering</th>
+          <th>Grand Total</th>
+          <th>Budget</th>
+          <th>Variance</th>
+          <th>vs Prior Month</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="sales-monthly-tbody"></tbody>
+        <tfoot id="sales-monthly-tfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Weekly Detail Table -->
+  <div style="background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h3 style="color:#1a1a1a;font-size:14px;font-weight:700;">📋 Weekly Detail</h3>
+      <div style="display:flex;gap:8px;">
+        <select id="sales-month-filter" onchange="renderSalesWeeklyTable()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;">
+          <option value="all">All Months</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);">
+      <table>
+        <thead><tr>
+          <th>Week #</th>
+          <th>Week Start</th>
+          <th>Location</th>
+          <th>☕ Café Total</th>
+          <th>↳ Café AZ</th>
+          <th>↳ Café WT</th>
+          <th>↳ Market AY</th>
+          <th>↳ Perks N</th>
+          <th>↳ Café Q</th>
+          <th>↳ Market R</th>
+          <th>↳ Café S</th>
+          <th>🥤 Barista Sales</th>
+          <th>↳ Barista Register</th>
+          <th>↳ Barista Catering</th>
+          <th>🛍️ Retail Sales</th>
+          <th>↳ Retail Register</th>
+          <th>↳ Retail Catering</th>
+          <th>🍽️ Total Catering</th>
+          <th>Grand Total</th>
+          <th>Budget</th>
+          <th>vs Budget</th>
+          <th>vs Prior Wk</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="sales-weekly-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- SALES ENTRY MODAL -->
+<div class="modal-overlay" id="sales-entry-modal">
+  <div class="modal" style="width:620px;max-width:96vw;">
+    <h2 id="sem-title">💵 Enter Weekly Sales</h2>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Week Start Date *</label>
+        <input id="sem-week-start" type="date" oninput="autoFillWeekEnd()">
+      </div>
+      <div class="form-group">
+        <label>Week End Date</label>
+        <input id="sem-week-end" type="date">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Location</label>
+        <select id="sem-location">
+          <option value="All Locations">All Locations</option>
+          <option>Café AZ</option><option>Café WT</option><option>Market AY</option>
+          <option>Perks N</option><option>Café Q</option><option>Market R</option><option>Café S</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Week # (optional)</label>
+        <input id="sem-week-num" type="number" min="1" max="53" placeholder="e.g. 14">
+      </div>
+    </div>
+
+    <!-- ── STREAM 1: CAFÉ SALES (GL 12000) ── -->
+    <div style="background:#fff8f5;border:1px solid #fdd0c0;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#F15D3B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">☕ Stream 1 — Café Sales (GL 12000)</div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px;">
+        <div></div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;text-align:center;">Register Sales</div>
+        <div style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;text-align:center;">Catering Sales</div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:#374151;">Café AZ</div>
+        <div>
+          <input id="sem-cafe-az-reg" type="number" step="0.01" min="0" placeholder="Register $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+        <div>
+          <input id="sem-cafe-az-cat" type="number" step="0.01" min="0" placeholder="Catering $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:#374151;">Café WT</div>
+        <div>
+          <input id="sem-cafe-wt-reg" type="number" step="0.01" min="0" placeholder="Register $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+        <div>
+          <input id="sem-cafe-wt-cat" type="number" step="0.01" min="0" placeholder="Catering $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:#374151;">Market AY</div>
+        <div>
+          <input id="sem-cafe-ay-reg" type="number" step="0.01" min="0" placeholder="Register $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+        <div>
+          <input id="sem-cafe-ay-cat" type="number" step="0.01" min="0" placeholder="Catering $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:#374151;">Perks N</div>
+        <div>
+          <input id="sem-cafe-n-reg" type="number" step="0.01" min="0" placeholder="Register $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+        <div>
+          <input id="sem-cafe-n-cat" type="number" step="0.01" min="0" placeholder="Catering $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:#374151;">Café Q</div>
+        <div>
+          <input id="sem-cafe-q-reg" type="number" step="0.01" min="0" placeholder="Register $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+        <div>
+          <input id="sem-cafe-q-cat" type="number" step="0.01" min="0" placeholder="Catering $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:#374151;">Market R</div>
+        <div>
+          <input id="sem-cafe-r-reg" type="number" step="0.01" min="0" placeholder="Register $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+        <div>
+          <input id="sem-cafe-r-cat" type="number" step="0.01" min="0" placeholder="Catering $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:#374151;">Café S</div>
+        <div>
+          <input id="sem-cafe-s-reg" type="number" step="0.01" min="0" placeholder="Register $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+        <div>
+          <input id="sem-cafe-s-cat" type="number" step="0.01" min="0" placeholder="Catering $" oninput="calcSalesTotal()" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid #fdd0c0;">
+        <div style="font-size:11px;color:#9ca3af;">Per-location totals update automatically</div>
+        <div style="font-size:12px;font-weight:800;color:#F15D3B;">Café Total: <span id="sem-cafe-subtotal">$0.00</span></div>
+      </div>
+    </div>
+
+    <!-- ── STREAM 2: BARISTA SALES (GL 12002) ── -->
+    <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🥤 Stream 2 — Barista Sales (GL 12002)</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Barista Register Sales ($)</label>
+          <input id="sem-barista-register" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcSalesTotal()">
+        </div>
+        <div class="form-group">
+          <label>Barista Catering Sales ($)</label>
+          <input id="sem-barista-catering" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcSalesTotal()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;font-size:12px;font-weight:700;color:#6366f1;">Barista Total: <span id="sem-barista-subtotal" style="margin-left:6px;">$0.00</span></div>
+    </div>
+
+    <!-- ── STREAM 3: RETAIL SALES ── -->
+    <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:800;color:#057a55;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🛍️ Stream 3 — Retail Sales</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Retail / Market Sales ($)</label>
+          <input id="sem-retail" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcSalesTotal()">
+        </div>
+        <div class="form-group">
+          <label>Retail Catering Sales ($)</label>
+          <input id="sem-retail-catering" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcSalesTotal()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;font-size:12px;font-weight:700;color:#057a55;">Retail Total: <span id="sem-retail-subtotal" style="margin-left:6px;">$0.00</span></div>
+    </div>
+
+    <!-- Weekly Budget -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Weekly Sales Budget ($)</label>
+        <input id="sem-budget" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcSalesTotal()">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <input id="sem-notes" placeholder="e.g. Holiday week, catering event...">
+      </div>
+    </div>
+
+    <!-- Summary bar -->
+    <div style="background:#1a1a1a;border-radius:8px;padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;text-align:center;margin-bottom:4px;">
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">Café</div>
+        <div id="sem-cafe-display" style="font-size:16px;font-weight:800;color:#F15D3B;">$0.00</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">Barista</div>
+        <div id="sem-barista-display" style="font-size:16px;font-weight:800;color:#a5b4fc;">$0.00</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">Retail</div>
+        <div id="sem-retail-display" style="font-size:16px;font-weight:800;color:#6ee7b7;">$0.00</div>
+      </div>
+      <div style="border-left:1px solid rgba(255,255,255,0.15);padding-left:12px;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">Total</div>
+        <div id="sem-total-display" style="font-size:18px;font-weight:900;color:white;">$0.00</div>
+        <div id="sem-variance-display" style="font-size:11px;margin-top:2px;color:#6b7280;">—</div>
+      </div>
+    </div>
+
+    <input type="hidden" id="sem-editing-id">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('sales-entry-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSalesEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MONTHLY SALES BUDGET MODAL -->
+<div class="modal-overlay" id="monthly-sales-budget-modal">
+  <div class="modal" style="width:500px;max-width:96vw;">
+    <h2>🎯 Set Monthly Sales Budgets</h2>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">Set your target sales for each month.</p>
+    <div id="msb-inputs"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('monthly-sales-budget-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMonthlySalesBudgets()">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- BUDGET SETTINGS MODAL -->
@@ -630,9 +1393,10 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
 
     <!-- Tabs inside modal -->
     <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;">
-      <button class="btn" id="bm-tab-monthly" onclick="switchBudgetTab('monthly')" style="border-radius:6px 6px 0 0;border-bottom:3px solid #F15D3B;color:#F15D3B;font-weight:700;background:white;">Monthly</button>
+      <button class="btn" id="bm-tab-monthly" onclick="switchBudgetTab('monthly')" style="border-radius:6px 6px 0 0;border-bottom:3px solid #F15D3B;color:#F15D3B;font-weight:700;background:white;">Monthly COGS</button>
       <button class="btn" id="bm-tab-weekly" onclick="switchBudgetTab('weekly')" style="border-radius:6px 6px 0 0;color:var(--gray);background:white;">Weekly</button>
       <button class="btn" id="bm-tab-yearly" onclick="switchBudgetTab('yearly')" style="border-radius:6px 6px 0 0;color:var(--gray);background:white;">Yearly</button>
+      <button class="btn" id="bm-tab-labor" onclick="switchBudgetTab('labor')" style="border-radius:6px 6px 0 0;color:var(--gray);background:white;">👥 Labor</button>
     </div>
 
     <!-- Monthly Budget -->
@@ -647,6 +1411,41 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
         <label>Weekly COGS Budget ($)</label>
         <input id="bm-weekly-val" type="number" step="0.01" min="0" placeholder="e.g. 12000">
         <div style="font-size:11px;color:var(--gray);margin-top:4px;">Auto-calculates monthly: weekly × 4.33</div>
+      </div>
+    </div>
+
+    <!-- Labor Budget -->
+    <div id="bm-labor" style="display:none;">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:12px;">Set your labor cost budgets. These are used to track actual labor vs targets each month.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Weekly Labor Budget ($)</label>
+          <input id="bm-labor-weekly" type="number" step="0.01" min="0" placeholder="e.g. 8000" oninput="calcLaborBudgetPreview()">
+          <div style="font-size:11px;color:var(--gray);margin-top:3px;">Auto-calculates monthly × 4.33</div>
+        </div>
+        <div class="form-group">
+          <label>Annual Labor Budget ($)</label>
+          <input id="bm-labor-yearly" type="number" step="0.01" min="0" placeholder="e.g. 420000" oninput="calcLaborBudgetPreview()">
+          <div style="font-size:11px;color:var(--gray);margin-top:3px;">Auto-calculates monthly ÷ 12</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Target Labor % of Sales</label>
+          <input id="bm-labor-pct" type="number" step="0.1" min="0" max="100" placeholder="e.g. 30">
+          <div style="font-size:11px;color:var(--gray);margin-top:3px;">Benchmark: food service typically 28–35%</div>
+        </div>
+        <div class="form-group">
+          <label>OT Threshold (hrs/week)</label>
+          <input id="bm-labor-ot" type="number" step="1" min="0" placeholder="e.g. 40">
+        </div>
+      </div>
+      <div id="bm-labor-preview" style="background:#fff1ed;border-radius:8px;padding:12px;font-size:13px;margin-top:8px;display:none;">
+        <strong>Budget Preview:</strong> Weekly $<span id="blp-weekly">0</span> → Monthly $<span id="blp-monthly">0</span> → Annual $<span id="blp-annual">0</span>
+      </div>
+      <div style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px;">Override by Month (optional)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;" id="bm-labor-monthly-inputs"></div>
       </div>
     </div>
 
@@ -710,6 +1509,95 @@ td .upc-tag { font-size: 11px; color: var(--gray); font-family: monospace; }
   </div>
 </div>
 
+
+<!-- LABOR ENTRY MODAL -->
+<div class="modal-overlay" id="labor-modal">
+  <div class="modal" style="width:560px;max-width:96vw;">
+    <h2 id="lm-title">👥 Enter Labor Data</h2>
+    <p style="color:var(--gray);font-size:13px;margin-bottom:16px;">Log actual labor costs for this month to track against your budget.</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Year</label>
+        <select id="lm-year"></select>
+      </div>
+      <div class="form-group">
+        <label>Month</label>
+        <select id="lm-month">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">Hours</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Regular Hours</label>
+          <input id="lm-reg-hrs" type="number" step="0.1" min="0" placeholder="e.g. 680" oninput="calcLaborTotal()">
+        </div>
+        <div class="form-group">
+          <label>Overtime Hours</label>
+          <input id="lm-ot-hrs" type="number" step="0.1" min="0" placeholder="e.g. 24" oninput="calcLaborTotal()">
+        </div>
+      </div>
+    </div>
+    <div style="background:#f9fafb;border-radius:8px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:10px;">Pay</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Regular Pay ($)</label>
+          <input id="lm-reg-pay" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcLaborTotal()">
+        </div>
+        <div class="form-group">
+          <label>Overtime Pay ($)</label>
+          <input id="lm-ot-pay" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcLaborTotal()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Benefits / Taxes ($)</label>
+          <input id="lm-benefits" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcLaborTotal()">
+          <div style="font-size:11px;color:var(--gray);margin-top:3px;">FICA, health, workers comp, etc.</div>
+        </div>
+        <div class="form-group">
+          <label>Other Labor Costs ($)</label>
+          <input id="lm-other" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcLaborTotal()">
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Monthly Sales / Revenue ($) <span style="font-weight:400;color:var(--gray);">(optional — for labor % calc)</span></label>
+      <input id="lm-sales" type="number" step="0.01" min="0" placeholder="0.00" oninput="calcLaborTotal()">
+    </div>
+    <!-- Summary -->
+    <div style="background:#fff1ed;border-radius:8px;padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;">
+      <div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Total Labor</div>
+        <div id="lm-total-display" style="font-size:20px;font-weight:900;color:#F15D3B;">$0.00</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">vs Budget</div>
+        <div id="lm-variance-display" style="font-size:20px;font-weight:900;color:#6b7280;">—</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">Labor %</div>
+        <div id="lm-pct-display" style="font-size:20px;font-weight:900;color:#6b7280;">—</div>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:14px;">
+      <label>Notes</label>
+      <input id="lm-notes" placeholder="e.g. Short-staffed week 2, holiday OT...">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('labor-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLaborData()">Save Labor Data</button>
+    </div>
+  </div>
+</div>
 <datalist id="vendor-datalist2"></datalist>
 
 <script>
@@ -731,6 +1619,7 @@ let transferLog = JSON.parse(localStorage.getItem('inv_transfer') || '[]');
 // Sort/filter state
 let itemSort = {col:'name', dir:1};
 let locSorts = {};
+let currentLoc = 'Café AZ'; // active location in unified inventory tab
 let itemPage = 1;
 const PAGE_SIZE = 50;
 let adjustTarget = null; // {loc, itemIdx}
@@ -749,19 +1638,28 @@ function persist() {
 // TABS
 // ═══════════════════════════════════
 function switchTab(id) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  const el = document.getElementById('tab-' + id.replace(/ /g,'_'));
-  if (el) {
+  try {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const tabId = 'tab-' + id.replace(/ /g,'_');
+    const el = document.getElementById(tabId);
+    if (!el) { console.warn('Tab not found:', tabId); return; }
     el.classList.add('active');
-    const btns = document.querySelectorAll('.tab-btn');
-    btns.forEach(b => { if (b.getAttribute('onclick').includes(id)) b.classList.add('active'); });
-    if (id === 'dashboard') renderDashboard();
-    else if (id === 'items') renderItems();
-    else if (id.startsWith('loc-')) renderLocation(id.replace('loc-',''));
-    else if (id === 'waste') renderWasteLog();
-    else if (id === 'transfer') renderTransferLog();
-  }
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      try { if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + id + "'")) b.classList.add('active'); } catch(e) {}
+    });
+    try {
+      if (id === 'analytics') { renderAnalytics(); renderPL(); }
+      else if (id === 'dashboard') renderDashboard();
+      else if (id === 'items') renderItems();
+      else if (id.startsWith('loc-')) renderLocation(id.replace('loc-',''));
+      else if (id === 'waste') renderWasteLog();
+      else if (id === 'transfer') renderTransferLog();
+      else if (id === 'purchasing') renderPurchasing();
+      else if (id === 'sales') renderSalesTab();
+      else if (id === 'inventory') { renderLocation(currentLoc); }
+    } catch(e) { console.error('Render error for tab ' + id + ':', e); }
+  } catch(e) { console.error('switchTab error:', e); }
 }
 
 // ═══════════════════════════════════
@@ -936,11 +1834,10 @@ function saveNewItem() {
 // LOCATION INVENTORY
 // ═══════════════════════════════════
 function renderLocation(loc) {
-  const id = 'tab-loc-' + loc.replace(/ /g,'_');
-  const el = document.getElementById(id);
+  const el = document.getElementById('inv-loc-content');
   if (!el) return;
-  const q = (document.getElementById('lsearch-'+loc.replace(/ /g,'_')) || {value:''}).value.toLowerCase();
-  const glF = (document.getElementById('lgl-'+loc.replace(/ /g,'_')) || {value:''}).value;
+  const q = (document.getElementById('lsearch-inv') || {value:''}).value.toLowerCase();
+  const glF = (document.getElementById('lgl-inv') || {value:''}).value;
   const sortState = locSorts[loc] || {col:'name', dir:1};
 
   let lItems = (locations[loc] || []).filter(it => {
@@ -960,8 +1857,8 @@ function renderLocation(loc) {
 
   el.innerHTML = `
     <div class="toolbar">
-      <input type="text" id="lsearch-${locKey}" placeholder="🔍 Search items or UPC..." oninput="renderLocation('${loc}')">
-      <select id="lgl-${locKey}" onchange="renderLocation('${loc}')">
+      <input type="text" id="lsearch-inv" placeholder="🔍 Search items or UPC..." oninput="renderLocation(currentLoc)">
+      <select id="lgl-inv" onchange="renderLocation(currentLoc)">
         <option value="">All GL Codes</option>
         <option value="12000">12000 - Cafeteria</option>
         <option value="12002">12002 - Barista</option>
@@ -992,6 +1889,18 @@ function renderLocation(loc) {
       </table>
     </div>`;
 }
+
+function switchLocation(loc) {
+  currentLoc = loc;
+  // Update active button
+  document.querySelectorAll('.loc-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim().includes(loc));
+  });
+  const badge = document.getElementById('inv-active-loc');
+  if (badge) badge.textContent = loc;
+  renderLocation(loc);
+}
+
 
 function computeTotal(it) {
   // Units * unitCost + Packs * packCost (for full packs not yet broken)
@@ -1186,12 +2095,14 @@ function saveWasteEntry() {
   toast('Waste entry logged', 'red');
 }
 function renderWasteLog() {
-  const total = wasteLog.reduce((s,e) => s+e.total, 0);
-  document.getElementById('waste-count').textContent = wasteLog.length;
+
+  const filtered = wasteLog.filter(e => inPeriod(e.date));
+  const total = filtered.reduce((s,e) => s+e.total, 0);
+  document.getElementById('waste-count').textContent = filtered.length;
   document.getElementById('waste-total').textContent = '$' + total.toFixed(2);
-  document.getElementById('waste-tbody').innerHTML = wasteLog.length === 0
-    ? '<tr><td colspan="10" style="text-align:center;color:var(--gray);padding:24px;">No waste entries yet. Click "+ Log Waste" to add one.</td></tr>'
-    : wasteLog.map((e,i) => `<tr>
+  document.getElementById('waste-tbody').innerHTML = filtered.length === 0
+    ? '<tr><td colspan="10" style="text-align:center;color:var(--gray);padding:24px;">No waste entries for this period.</td></tr>'
+    : filtered.map((e,i) => `<tr>
         <td>${i+1}</td><td>${e.date}</td>
         <td><strong>${esc(e.item)}</strong>${e.location ? '<br><small>'+esc(e.location)+'</small>':''}</td>
         <td class="num">${e.units}</td><td class="num">$${e.unitCost.toFixed(2)}</td>
@@ -1250,12 +2161,14 @@ function saveTransferEntry() {
   toast('Transfer logged! Inventory auto-adjusted.', 'green');
 }
 function renderTransferLog() {
-  const total = transferLog.reduce((s,e) => s+e.total, 0);
-  document.getElementById('transfer-count').textContent = transferLog.length;
+
+  const filtered = transferLog.filter(e => inPeriod(e.date));
+  const total = filtered.reduce((s,e) => s+e.total, 0);
+  document.getElementById('transfer-count').textContent = filtered.length;
   document.getElementById('transfer-total').textContent = '$' + total.toFixed(2);
-  document.getElementById('transfer-tbody').innerHTML = transferLog.length === 0
-    ? '<tr><td colspan="10" style="text-align:center;color:var(--gray);padding:24px;">No transfer entries yet. Click "+ Log Transfer" to add one.</td></tr>'
-    : transferLog.map((e,i) => `<tr>
+  document.getElementById('transfer-tbody').innerHTML = filtered.length === 0
+    ? '<tr><td colspan="10" style="text-align:center;color:var(--gray);padding:24px;">No transfer entries for this period.</td></tr>'
+    : filtered.map((e,i) => `<tr>
         <td>${i+1}</td><td>${e.date}</td>
         <td><strong>${esc(e.item)}</strong></td>
         <td class="num">${e.units}</td><td class="num">$${e.unitCost.toFixed(2)}</td>
@@ -1307,6 +2220,7 @@ function renderPurchasing() {
   });
 
   let filtered = invoices.filter(inv => {
+    if (!inPeriod(inv.invoiceDate)) return false;
     if (q && !inv.invoiceNum.toLowerCase().includes(q) && !inv.vendor.toLowerCase().includes(q) && !(inv.poNum||'').toLowerCase().includes(q) && !(inv.desc||'').toLowerCase().includes(q)) return false;
     if (statusF && inv.status !== statusF) return false;
     if (vendorF && inv.vendor !== vendorF) return false;
@@ -1584,12 +2498,6 @@ function exportAP() {
   toast('CSV exported!', 'green');
 }
 
-// Patch switchTab to handle purchasing
-const _origSwitchTab = switchTab;
-window.switchTab = function(id) {
-  _origSwitchTab(id);
-  if (id === 'purchasing') renderPurchasing();
-};
 
 
 // ═══════════════════════════════════
@@ -1607,16 +2515,6 @@ function toast(msg, type='') {
   setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .4s'; setTimeout(()=>t.remove(),400); }, 3000);
 }
 
-// Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
-});
-
-// ═══════════════════════════════════
-// INIT
-// ═══════════════════════════════════
-renderDashboard();
-
 // ═══════════════════════════════════
 // ANALYTICS
 // ═══════════════════════════════════
@@ -1628,6 +2526,19 @@ let analyticsData = JSON.parse(localStorage.getItem('inv_analytics') || '{}');
 // Structure: { "2025": { "1": { opening, purchases, closing, cogs }, ... } }
 
 let budgets = JSON.parse(localStorage.getItem('inv_budgets') || '{}');
+
+// ═══════════════════════════════════
+// WEEKLY SALES
+// ═══════════════════════════════════
+let weeklySales   = JSON.parse(localStorage.getItem('inv_weekly_sales')    || '[]');
+let closedWeeks   = JSON.parse(localStorage.getItem('inv_closed_weeks')    || '{}');
+// closedWeeks structure: { "2025": [ { id, weekStart, weekEnd, weekNum, month, year,
+//   openingInv, closingInv, purchases, cogs, laborReg, laborOT, laborBenefits, labor,
+//   revenue, revCafe, revBarista, revRetail, revCatering, grossProfit, netIncome, notes, closedAt } ] }
+// Each entry: { id, weekStart, weekEnd, weekNum, location, cafe, barista, other, total, budget, notes, createdAt }
+let salesBudgets = JSON.parse(localStorage.getItem('inv_sales_budgets') || '{}');
+// { monthly: { "2025": { "1": 0 ... } }, weekly: 0 }
+
 // Structure: { weekly: 0, yearly: 0, invBudget: 0, monthly: { "1": 0, "2": 0, ... } }
 
 function saveAnalyticsData() {
@@ -1656,6 +2567,10 @@ function getWeeklyBudget() { return budgets.weekly || 0; }
 function getYearlyBudget() { return budgets.yearly || 0; }
 
 function renderAnalytics() {
+  // Sync an-year selector with periodState
+  const anYearEl = document.getElementById('an-year');
+  if (anYearEl && [...anYearEl.options].some(o => o.value === periodState.year))
+    anYearEl.value = periodState.year;
   // Populate year selector
   const yearSel = document.getElementById('an-year');
   if (!yearSel) return;
@@ -1776,6 +2691,9 @@ function renderAnalytics() {
 
   // ── Budget Progress Bars ──
   renderBudgetBars(year, ytdCogs, ytdBudget, ytdPurchases);
+
+  // ── Labor Section ──
+  renderLaborSection(year);
 
   // ── Location bars ──
   renderLocationBars();
@@ -1971,12 +2889,33 @@ function openBudgetModal() {
   document.getElementById('bm-weekly-val').value = budgets.weekly || '';
   document.getElementById('bm-yearly-val').value = budgets.yearly || '';
   document.getElementById('bm-inv-budget').value = budgets.invBudget || '';
+
+  // Labor fields
+  const lw = document.getElementById('bm-labor-weekly');
+  const ly = document.getElementById('bm-labor-yearly');
+  const lp = document.getElementById('bm-labor-pct');
+  const lo = document.getElementById('bm-labor-ot');
+  if (lw) lw.value = budgets.laborWeekly || '';
+  if (ly) ly.value = budgets.laborYearly || '';
+  if (lp) lp.value = budgets.laborPct || '';
+  if (lo) lo.value = budgets.laborOtThreshold || '';
+
+  // Labor monthly override inputs
+  const lmContainer = document.getElementById('bm-labor-monthly-inputs');
+  if (lmContainer) {
+    lmContainer.innerHTML = MONTHS.map((name, i) => `
+      <div class="form-group">
+        <label style="font-size:11px;">${name}</label>
+        <input type="number" step="0.01" min="0" placeholder="0.00"
+          id="bm-lm-${i+1}" value="${budgets.laborMonthly && budgets.laborMonthly[i+1] ? budgets.laborMonthly[i+1] : ''}">
+      </div>`).join('');
+  }
   openModal('budget-modal');
 }
 
 function switchBudgetTab(tab) {
   activeBudgetTab = tab;
-  ['monthly','weekly','yearly'].forEach(t => {
+  ['monthly','weekly','yearly','labor'].forEach(t => {
     document.getElementById('bm-'+t).style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('bm-tab-'+t);
     if (t === tab) {
@@ -1997,11 +2936,22 @@ function saveBudgets() {
     const val = parseFloat(document.getElementById('bm-m-'+m)?.value);
     if (!isNaN(val) && val > 0) monthly[m] = val;
   }
+  // Labor monthly overrides
+  const laborMonthly = {};
+  for (let m = 1; m <= 12; m++) {
+    const el = document.getElementById('bm-lm-'+m);
+    if (el) { const v = parseFloat(el.value); if (!isNaN(v) && v > 0) laborMonthly[m] = v; }
+  }
   budgets = {
     monthly,
     weekly: parseFloat(document.getElementById('bm-weekly-val').value) || 0,
     yearly: parseFloat(document.getElementById('bm-yearly-val').value) || 0,
     invBudget: parseFloat(document.getElementById('bm-inv-budget').value) || 0,
+    laborWeekly: parseFloat(document.getElementById('bm-labor-weekly')?.value) || 0,
+    laborYearly: parseFloat(document.getElementById('bm-labor-yearly')?.value) || 0,
+    laborPct: parseFloat(document.getElementById('bm-labor-pct')?.value) || 0,
+    laborOtThreshold: parseFloat(document.getElementById('bm-labor-ot')?.value) || 0,
+    laborMonthly,
   };
   saveBudgetData();
   closeModal('budget-modal');
@@ -2028,12 +2978,1694 @@ function exportAnalytics() {
   toast('Analytics exported!','green');
 }
 
-// Patch switchTab for analytics
-const _prevSwitchTab = window.switchTab;
-window.switchTab = function(id) {
-  _prevSwitchTab(id);
-  if (id === 'analytics') renderAnalytics();
+
+
+// ═══════════════════════════════════
+// LABOR COSTS
+// ═══════════════════════════════════
+let laborData = JSON.parse(localStorage.getItem('inv_labor') || '{}');
+// Structure: { "2025": { "1"
+
+// Weekly closed books
+// Structure: { "2025": { "14": { weekNum, weekStart, weekEnd, month, year,
+//   sales: { cafe, barista, retail, catering, total, byLocation:{} },
+//   cogs: { total, cafe, barista, purchases },
+//   labor: { regular, ot, benefits, other, total },
+//   inventory: { opening, closing },
+//   closed: true, closedAt, notes } } }
+let weeklyBooks = JSON.parse(localStorage.getItem('inv_weekly_books') || '{}');
+function saveWeeklyBooks() { localStorage.setItem('inv_weekly_books', JSON.stringify(weeklyBooks)); }
+
+function saveLaborStorage() {
+  localStorage.setItem('inv_labor', JSON.stringify(laborData));
+}
+
+function getLaborBudget(year, month) {
+  if (budgets.laborMonthly && budgets.laborMonthly[month]) return budgets.laborMonthly[month];
+  if (budgets.laborYearly) return budgets.laborYearly / 12;
+  if (budgets.laborWeekly) return budgets.laborWeekly * 4.33;
+  return 0;
+}
+
+function openLaborModal() {
+  const yearSel = document.getElementById('lm-year');
+  const years = getYears();
+  yearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  yearSel.value = String(new Date().getFullYear());
+  document.getElementById('lm-month').value = String(new Date().getMonth() + 1);
+  ['lm-reg-hrs','lm-ot-hrs','lm-reg-pay','lm-ot-pay','lm-benefits','lm-other','lm-sales','lm-notes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+
+  // Pre-fill if data exists for current month
+  const year = yearSel.value;
+  const month = new Date().getMonth() + 1;
+  const existing = (laborData[year] || {})[month];
+  if (existing) {
+    document.getElementById('lm-reg-hrs').value = existing.regHrs || '';
+    document.getElementById('lm-ot-hrs').value = existing.otHrs || '';
+    document.getElementById('lm-reg-pay').value = existing.regPay || '';
+    document.getElementById('lm-ot-pay').value = existing.otPay || '';
+    document.getElementById('lm-benefits').value = existing.benefits || '';
+    document.getElementById('lm-other').value = existing.other || '';
+    document.getElementById('lm-sales').value = existing.sales || '';
+    document.getElementById('lm-notes').value = existing.notes || '';
+  }
+  calcLaborTotal();
+  openModal('labor-modal');
+}
+
+function calcLaborTotal() {
+  const regPay = parseFloat(document.getElementById('lm-reg-pay').value) || 0;
+  const otPay = parseFloat(document.getElementById('lm-ot-pay').value) || 0;
+  const benefits = parseFloat(document.getElementById('lm-benefits').value) || 0;
+  const other = parseFloat(document.getElementById('lm-other').value) || 0;
+  const total = regPay + otPay + benefits + other;
+  const sales = parseFloat(document.getElementById('lm-sales').value) || 0;
+  const year = document.getElementById('lm-year')?.value || new Date().getFullYear();
+  const month = document.getElementById('lm-month')?.value || new Date().getMonth() + 1;
+  const budget = getLaborBudget(year, month);
+  const variance = budget > 0 ? total - budget : null;
+  const laborPct = sales > 0 ? (total / sales * 100) : null;
+
+  document.getElementById('lm-total-display').textContent = '$' + total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const varEl = document.getElementById('lm-variance-display');
+  if (variance !== null) {
+    varEl.textContent = (variance >= 0 ? '+' : '') + '$' + Math.abs(variance).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    varEl.style.color = variance > 0 ? '#e02424' : '#057a55';
+  } else {
+    varEl.textContent = '—';
+    varEl.style.color = '#6b7280';
+  }
+  const pctEl = document.getElementById('lm-pct-display');
+  if (laborPct !== null) {
+    pctEl.textContent = laborPct.toFixed(1) + '%';
+    pctEl.style.color = laborPct > 35 ? '#e02424' : laborPct > 30 ? '#c27803' : '#057a55';
+  } else {
+    pctEl.textContent = '—';
+    pctEl.style.color = '#6b7280';
+  }
+}
+
+function saveLaborData() {
+  const year = document.getElementById('lm-year').value;
+  const month = document.getElementById('lm-month').value;
+  const regPay = parseFloat(document.getElementById('lm-reg-pay').value) || 0;
+  const otPay = parseFloat(document.getElementById('lm-ot-pay').value) || 0;
+  const benefits = parseFloat(document.getElementById('lm-benefits').value) || 0;
+  const other = parseFloat(document.getElementById('lm-other').value) || 0;
+  if (!laborData[year]) laborData[year] = {};
+  laborData[year][month] = {
+    regHrs: parseFloat(document.getElementById('lm-reg-hrs').value) || 0,
+    otHrs: parseFloat(document.getElementById('lm-ot-hrs').value) || 0,
+    regPay, otPay, benefits, other,
+    total: regPay + otPay + benefits + other,
+    sales: parseFloat(document.getElementById('lm-sales').value) || 0,
+    notes: document.getElementById('lm-notes').value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+  saveLaborStorage();
+  closeModal('labor-modal');
+  renderAnalytics();
+  toast('Labor data saved!', 'green');
+}
+
+function renderLaborSection(year) {
+  const yearData = laborData[year] || {};
+  const currentMonth = new Date().getFullYear() === parseInt(year) ? new Date().getMonth() + 1 : 12;
+
+  // KPIs
+  let ytdLabor = 0, ytdLaborBudget = 0, ytdOtPay = 0, ytdRegPay = 0, ytdBenefits = 0, monthsWithLabor = 0;
+  for (let m = 1; m <= currentMonth; m++) {
+    const md = yearData[m] || {};
+    ytdLabor += md.total || 0;
+    ytdLaborBudget += getLaborBudget(year, m);
+    ytdOtPay += md.otPay || 0;
+    ytdRegPay += md.regPay || 0;
+    ytdBenefits += md.benefits || 0;
+    if (md.total) monthsWithLabor++;
+  }
+  const laborVariance = ytdLabor - ytdLaborBudget;
+
+  const kpiEl = document.getElementById('an-labor-kpis');
+  if (kpiEl) kpiEl.innerHTML = `
+    <div class="stat-pill"><span class="val" style="color:#6366f1;">$${ytdLabor.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="lbl">YTD Total Labor</span></div>
+    <div class="stat-pill"><span class="val" style="color:#057a55;">$${ytdLaborBudget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="lbl">YTD Labor Budget</span></div>
+    <div class="stat-pill"><span class="val" style="color:${laborVariance > 0 ? '#e02424' : '#057a55'};">${laborVariance >= 0 ? '+' : ''}$${laborVariance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="lbl">Variance</span></div>
+    <div class="stat-pill"><span class="val" style="color:#c27803;">$${ytdOtPay.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="lbl">YTD Overtime Pay</span></div>
+    <div class="stat-pill"><span class="val" style="color:#6b7280;">$${ytdBenefits.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span><span class="lbl">YTD Benefits</span></div>
+    <div class="stat-pill"><span class="val">${monthsWithLabor}</span><span class="lbl">Months Tracked</span></div>`;
+
+  // Monthly bar chart
+  const maxLabor = Math.max(...Array.from({length:12},(_,i)=>(yearData[i+1]||{}).total||0), ...Array.from({length:12},(_,i)=>getLaborBudget(year,i+1)), 1);
+  let chartHtml = '<div style="display:flex;align-items:flex-end;gap:4px;height:140px;padding-bottom:24px;">';
+  for (let m = 1; m <= 12; m++) {
+    const md = yearData[m] || {};
+    const actual = md.total || 0;
+    const budget = getLaborBudget(year, m);
+    const aH = actual > 0 ? Math.max(4, (actual/maxLabor)*130) : 0;
+    const bH = budget > 0 ? Math.max(2, (budget/maxLabor)*130) : 0;
+    const over = actual > budget && budget > 0;
+    chartHtml += `<div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;">
+      <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:130px;">
+        <div style="flex:1;background:${over?'#e02424':'#6366f1'};border-radius:3px 3px 0 0;height:${aH}px;" title="Actual: $${actual.toFixed(0)}"></div>
+        <div style="flex:1;background:#e5e7eb;border-radius:3px 3px 0 0;height:${bH}px;" title="Budget: $${budget.toFixed(0)}"></div>
+      </div>
+      <div style="font-size:9px;color:#6b7280;position:absolute;bottom:0;">${MONTHS_SHORT[m-1]}</div>
+    </div>`;
+  }
+  chartHtml += '</div><div style="display:flex;gap:16px;margin-top:4px;font-size:12px;">';
+  chartHtml += '<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#6366f1;border-radius:2px;display:inline-block;"></span>Actual</span>';
+  chartHtml += '<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#e5e7eb;border-radius:2px;display:inline-block;"></span>Budget</span>';
+  chartHtml += '<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#e02424;border-radius:2px;display:inline-block;"></span>Over</span></div>';
+  const chartEl = document.getElementById('an-labor-chart');
+  if (chartEl) chartEl.innerHTML = chartHtml;
+
+  // Budget progress bars
+  const weeklyLaborBudget = budgets.laborWeekly || 0;
+  const yearlyLaborBudget = budgets.laborYearly || 0;
+  const weeksElapsed = currentMonth * 4.33;
+  const laborBars = [
+    { label: 'Annual Labor vs Budget', current: ytdLabor, budget: yearlyLaborBudget, color: '#6366f1' },
+    { label: 'OT Pay vs Total Labor', current: ytdOtPay, budget: ytdLabor, color: '#c27803', altLabel: '% of total' },
+    { label: 'Weekly Labor Run Rate', current: ytdLabor / (weeksElapsed||1), budget: weeklyLaborBudget, color: '#6366f1' },
+  ];
+  const laborBarsEl = document.getElementById('an-labor-budget-bars');
+  if (laborBarsEl) laborBarsEl.innerHTML = laborBars.map(b => {
+    if (!b.budget) return `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;"><strong>${b.label}</strong><button class="btn btn-sm btn-outline" onclick="openBudgetModal()">Set Budget</button></div></div>`;
+    const pct = Math.min((b.current/b.budget)*100, 100);
+    const over = b.current > b.budget;
+    const variance = b.current - b.budget;
+    return `<div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;">
+        <strong style="color:#1a1a1a;">${b.label}</strong>
+        <span style="color:${over?'#e02424':'#057a55'};font-weight:700;">${over?'⚠️ Over':'✅ Under'} $${Math.abs(variance).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}</span>
+      </div>
+      <div style="background:#f3f4f6;border-radius:6px;height:24px;overflow:hidden;position:relative;">
+        <div style="height:100%;width:${pct}%;background:${over?'#e02424':b.color};border-radius:6px;display:flex;align-items:center;padding:0 8px;">
+          <span style="color:white;font-size:11px;font-weight:700;">${pct>20?'$'+b.current.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}):''}</span>
+        </div>
+        <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:#6b7280;">${pct.toFixed(1)}%</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Monthly detail table
+  let laborTbody = '';
+  let totRegPay = 0, totOtPay = 0, totBenefits = 0, totOther = 0, totTotal = 0, totBudget = 0;
+  for (let m = 1; m <= 12; m++) {
+    const md = yearData[m] || {};
+    const hasData = md.total !== undefined && md.total > 0;
+    const budget = getLaborBudget(year, m);
+    const variance = hasData ? md.total - budget : null;
+    const laborPct = hasData && md.sales > 0 ? (md.total / md.sales * 100) : null;
+    const isFuture = m > currentMonth && parseInt(year) === new Date().getFullYear();
+    const over = variance !== null && variance > 0;
+    totRegPay += md.regPay || 0;
+    totOtPay += md.otPay || 0;
+    totBenefits += md.benefits || 0;
+    totOther += md.other || 0;
+    totTotal += md.total || 0;
+    totBudget += budget;
+    laborTbody += `<tr style="${isFuture?'opacity:0.4;':''}${m===new Date().getMonth()+1&&parseInt(year)===new Date().getFullYear()?'background:#faf5ff;font-weight:600;':''}">
+      <td><strong>${MONTHS[m-1]}</strong>${m===new Date().getMonth()+1&&parseInt(year)===new Date().getFullYear()?'  <span style="background:#6366f1;color:white;font-size:10px;padding:1px 6px;border-radius:8px;">NOW</span>':''}</td>
+      <td class="num">${hasData&&md.regHrs?md.regHrs.toFixed(1):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="${md.otHrs>0?'color:#c27803;font-weight:600;':''}">${hasData&&md.otHrs?md.otHrs.toFixed(1):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num">${hasData&&md.regPay?'$'+md.regPay.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="${md.otPay>0?'color:#c27803;':''}">${hasData&&md.otPay?'$'+md.otPay.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num">${hasData&&md.benefits?'$'+md.benefits.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-weight:700;color:#6366f1;">${hasData?'$'+md.total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num">${budget>0?'$'+budget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="color:${over?'#e02424':'#057a55'};font-weight:600;">${variance!==null?(variance>=0?'+':'')+'$'+variance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num"><span style="background:${laborPct?laborPct>35?'#fde8e8':laborPct>30?'#fdf6b2':'#def7ec':'#f3f4f6'};color:${laborPct?laborPct>35?'#e02424':laborPct>30?'#c27803':'#057a55':'#ccc'};padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700;">${laborPct!==null?laborPct.toFixed(1)+'%':'—'}</span></td>
+      <td><button class="btn btn-sm btn-outline" onclick="openLaborModalForMonth('${year}',${m})" ${isFuture?'disabled':''}>✏️</button></td>
+    </tr>`;
+  }
+  const laborTbodyEl = document.getElementById('an-labor-tbody');
+  if (laborTbodyEl) laborTbodyEl.innerHTML = laborTbody;
+
+  const totVariance = totTotal - totBudget;
+  const laborTfootEl = document.getElementById('an-labor-tfoot');
+  if (laborTfootEl) laborTfootEl.innerHTML = `
+    <tr style="background:#1a1a1a;color:white;font-weight:700;">
+      <td><strong>TOTAL</strong></td>
+      <td class="num"></td><td class="num"></td>
+      <td class="num">$${totRegPay.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num" style="color:#fbbf24;">$${totOtPay.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num">$${totBenefits.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num" style="color:#a5b4fc;">$${totTotal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num">$${totBudget.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num" style="color:${totVariance>0?'#ff8c5a':'#7effc4'};">${totVariance>=0?'+':''}$${totVariance.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td class="num"></td><td></td>
+    </tr>`;
+}
+
+function openLaborModalForMonth(year, month) {
+  openLaborModal();
+  document.getElementById('lm-year').value = year;
+  document.getElementById('lm-month').value = month;
+  const existing = (laborData[year] || {})[month];
+  if (existing) {
+    document.getElementById('lm-reg-hrs').value = existing.regHrs || '';
+    document.getElementById('lm-ot-hrs').value = existing.otHrs || '';
+    document.getElementById('lm-reg-pay').value = existing.regPay || '';
+    document.getElementById('lm-ot-pay').value = existing.otPay || '';
+    document.getElementById('lm-benefits').value = existing.benefits || '';
+    document.getElementById('lm-other').value = existing.other || '';
+    document.getElementById('lm-sales').value = existing.sales || '';
+    document.getElementById('lm-notes').value = existing.notes || '';
+    calcLaborTotal();
+  }
+}
+
+function calcLaborBudgetPreview() {
+  const weekly = parseFloat(document.getElementById('bm-labor-weekly')?.value) || 0;
+  const yearly = parseFloat(document.getElementById('bm-labor-yearly')?.value) || 0;
+  const preview = document.getElementById('bm-labor-preview');
+  if (!preview) return;
+  if (weekly || yearly) {
+    preview.style.display = 'block';
+    const wk = weekly || yearly / 52;
+    const mo = weekly ? weekly * 4.33 : yearly / 12;
+    const yr = yearly || weekly * 52;
+    document.getElementById('blp-weekly').textContent = wk.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    document.getElementById('blp-monthly').textContent = mo.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+    document.getElementById('blp-annual').textContent = yr.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+
+// ═══════════════════════════════════
+// P&L STATEMENT
+// ═══════════════════════════════════
+let plSalesData = JSON.parse(localStorage.getItem('inv_pl_sales') || '{}');
+// { "2025": { "1": { cafeteria: 0, barista: 0, total: 0 }, ... } }
+
+function savePLSales() {
+  const year = (document.getElementById('an-year') || {value: String(new Date().getFullYear())}).value;
+  if (!plSalesData[year]) plSalesData[year] = {};
+  MONTHS.forEach((_, i) => {
+    const m = i + 1;
+    const total = parseFloat(document.getElementById('pls-total-' + m)?.value) || 0;
+    const cafe = parseFloat(document.getElementById('pls-cafe-' + m)?.value) || 0;
+    const barista = parseFloat(document.getElementById('pls-barista-' + m)?.value) || 0;
+    if (total || cafe || barista) {
+      plSalesData[year][m] = { total: total || (cafe + barista), cafeteria: cafe, barista };
+    }
+  });
+  localStorage.setItem('inv_pl_sales', JSON.stringify(plSalesData));
+  closeModal('pl-sales-modal');
+  renderPL();
+  toast('Sales data saved!', 'green');
+}
+
+function openPLSalesModal() {
+  const year = (document.getElementById('an-year') || {value: String(new Date().getFullYear())}).value;
+  const yearSales = plSalesData[year] || {};
+  const container = document.getElementById('pl-sales-inputs');
+  if (!container) return;
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px;">
+      <div style="font-size:11px;font-weight:700;color:#6b7280;">MONTH</div>
+      <div style="font-size:11px;font-weight:700;color:#6b7280;">TOTAL SALES ($)</div>
+      <div style="font-size:11px;font-weight:700;color:#6b7280;">CAFETERIA ($)</div>
+      <div style="font-size:11px;font-weight:700;color:#6b7280;">BARISTA ($)</div>
+    </div>` +
+    MONTHS.map((name, i) => {
+      const m = i + 1;
+      const ms = yearSales[m] || {};
+      return `<div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px;">
+        <div style="font-size:13px;font-weight:600;">${name}</div>
+        <input type="number" step="0.01" min="0" id="pls-total-${m}" value="${ms.total || ''}" placeholder="0.00" style="padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        <input type="number" step="0.01" min="0" id="pls-cafe-${m}" value="${ms.cafeteria || ''}" placeholder="0.00" style="padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+        <input type="number" step="0.01" min="0" id="pls-barista-${m}" value="${ms.barista || ''}" placeholder="0.00" style="padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;">
+      </div>`;
+    }).join('');
+  openModal('pl-sales-modal');
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// WEEKLY BOOKS & P&L ENGINE
+// ═══════════════════════════════════════════════════════════
+
+let plView = 'week'; // 'week' | 'month' | 'year'
+
+function setPLView(view) {
+  plView = view;
+  ['week','month','year'].forEach(v => {
+    const btn = document.getElementById('pl-view-' + v);
+    if (!btn) return;
+    if (v === view) {
+      btn.style.background = 'rgba(241,93,59,0.8)';
+      btn.style.color = 'white';
+    } else {
+      btn.style.background = 'rgba(255,255,255,0.08)';
+      btn.style.color = 'rgba(255,255,255,0.6)';
+    }
+  });
+  updatePLPeriodSelector();
+  renderPL();
+}
+
+function getISOWeekNumber(dateStr) {
+  const d = new Date(dateStr);
+  const jan1 = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+}
+
+function updatePLPeriodSelector() {
+  const sel = document.getElementById('pl-period');
+  const pills = document.getElementById('pl-period-pills');
+  if (!sel) return;
+  const year = (document.getElementById('an-year') || {value: String(new Date().getFullYear())}).value;
+  const yearBooks = weeklyBooks[year] || {};
+  const currentWeek = getISOWeekNumber(new Date().toISOString().split('T')[0]);
+  const currentMonth = new Date().getMonth() + 1;
+
+  if (plView === 'week') {
+    // Populate weeks that have closed books, plus current week
+    const weeks = Object.keys(yearBooks).map(Number).sort((a,b)=>a-b);
+    if (!weeks.includes(currentWeek)) weeks.push(currentWeek);
+    sel.innerHTML = '<option value="ytd">All Weeks (YTD)</option>' +
+      weeks.map(w => `<option value="w${w}" ${w===currentWeek?'selected':''}>${'Week ' + w + (yearBooks[w] ? ' ✓' : ' (open)')}</option>`).join('');
+
+    // Pills: recent 8 weeks
+    const recent = weeks.slice(-8);
+    if (pills) pills.innerHTML = recent.map(w =>
+      `<button onclick="document.getElementById('pl-period').value='w${w}';renderPL()" style="padding:4px 10px;border-radius:12px;border:1px solid ${yearBooks[w]?'#F15D3B':'rgba(255,255,255,0.2)'};background:${yearBooks[w]?'rgba(241,93,59,0.2)':'transparent'};color:${yearBooks[w]?'#F15D3B':'rgba(255,255,255,0.5)'};font-size:11px;cursor:pointer;white-space:nowrap;">Wk ${w}${yearBooks[w]?' 🔒':''}</button>`
+    ).join('');
+
+  } else if (plView === 'month') {
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    sel.innerHTML = '<option value="ytd">Year to Date</option>' +
+      months.map((n,i) => `<option value="${i+1}" ${i+1===currentMonth?'selected':''}>${n}</option>`).join('');
+    if (pills) {
+      const pastMonths = Array.from({length:currentMonth},(_,i)=>i+1);
+      pills.innerHTML = pastMonths.map(m =>
+        `<button onclick="document.getElementById('pl-period').value='${m}';renderPL()" style="padding:4px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:rgba(255,255,255,0.5);font-size:11px;cursor:pointer;">${months[m-1].slice(0,3)}</button>`
+      ).join('');
+    }
+
+  } else {
+    sel.innerHTML = '<option value="ytd">Full Year</option>';
+    if (pills) pills.innerHTML = '<span style="color:rgba(255,255,255,0.4);font-size:11px;">Showing full year summary</span>';
+  }
+}
+
+function getPeriodData(year) {
+  const period = (document.getElementById('pl-period') || {value: 'ytd'}).value;
+  const yearAnalytics = analyticsData[year] || {};
+  const yearLabor = laborData[year] || {};
+  const yearSales = plSalesData[year] || {};
+  const yearBooks = weeklyBooks[year] || {};
+  const currentMonth = new Date().getFullYear() === parseInt(year) ? new Date().getMonth() + 1 : 12;
+  const currentWeek = getISOWeekNumber(new Date().toISOString().split('T')[0]);
+
+  let result = {
+    cogsCafeteria: 0, cogsCafeBudget: 0, cogsBarista: 0, cogsBaristaBudget: 0,
+    cogsPurchases: 0, cogsTotal: 0, cogsTotalBudget: 0,
+    laborRegular: 0, laborOT: 0, laborBenefits: 0, laborOther: 0, laborTotal: 0, laborBudget: 0,
+    salesTotal: 0, salesCafeteria: 0, salesBarista: 0, salesRetail: 0, salesCatering: 0,
+    salesBudget: 0,
+    apTotal: 0, apPaid: 0, apBalance: 0, apCafe: 0, apBarista: 0,
+    invOpening: 0, invClosing: 0,
+    weeksData: [], // for drilldown table
+    periodsCount: 0,
+  };
+
+  // ── HELPER: accumulate one closed week into result ──
+  function accWeek(wb) {
+    result.salesTotal     += (wb.sales && wb.sales.total) || 0;
+    result.salesCafeteria += (wb.sales && wb.sales.cafe) || 0;
+    result.salesBarista   += (wb.sales && wb.sales.barista) || 0;
+    result.salesRetail    += (wb.sales && wb.sales.retail) || 0;
+    result.salesCatering  += (wb.sales && wb.sales.catering) || 0;
+    result.salesBudget    += (wb.sales && wb.sales.budget) || 0;
+    result.cogsTotal      += (wb.cogs && wb.cogs.total) || 0;
+    result.cogsPurchases  += (wb.cogs && wb.cogs.purchases) || 0;
+    result.laborRegular   += (wb.labor && wb.labor.regular) || 0;
+    result.laborOT        += (wb.labor && wb.labor.ot) || 0;
+    result.laborBenefits  += (wb.labor && wb.labor.benefits) || 0;
+    result.laborOther     += (wb.labor && wb.labor.other) || 0;
+    result.laborTotal     += (wb.labor && wb.labor.total) || 0;
+    result.periodsCount++;
+  }
+
+  // ── Inventory proportion helpers ──
+  const invTotal = Object.values(locations).reduce((s, lItems) => s + lItems.reduce((ss, it) => ss + computeTotal(it), 0), 0);
+  const invCafe2 = Object.values(locations).reduce((s, lItems) => s + lItems.filter(it => it.glCode.includes('12000')).reduce((ss, it) => ss + computeTotal(it), 0), 0);
+  const invBarista2 = Object.values(locations).reduce((s, lItems) => s + lItems.filter(it => it.glCode.includes('12002')).reduce((ss, it) => ss + computeTotal(it), 0), 0);
+  const cafePct = invTotal > 0 ? invCafe2 / invTotal : 0.85;
+  const baristaPct = invTotal > 0 ? invBarista2 / invTotal : 0.15;
+
+  if (plView === 'week' && period !== 'ytd') {
+    // Single week view
+    const weekNum = parseInt(period.replace('w', ''));
+    const wb = yearBooks[weekNum];
+    if (wb) {
+      accWeek(wb);
+      result.invOpening = (wb.inventory && wb.inventory.opening) || 0;
+      result.invClosing = (wb.inventory && wb.inventory.closing) || 0;
+      result.weeksData = [{ weekNum, ...wb }];
+    } else {
+      // Open week — pull from live sales + labor data
+      const weekSales = weeklySales.filter(e => e.weekStart && getISOWeekNumber(e.weekStart) === weekNum && e.weekStart.startsWith(year));
+      weekSales.forEach(e => {
+        result.salesTotal     += e.total || 0;
+        result.salesCafeteria += e.cafe || 0;
+        result.salesBarista   += e.barista || 0;
+        result.salesRetail    += (e.retailTotal || e.other || 0);
+        result.salesCatering  += e.catering || 0;
+        result.salesBudget    += e.budget || 0;
+      });
+      result.weeksData = [{ weekNum, open: true }];
+    }
+
+  } else if (plView === 'month' && period !== 'ytd') {
+    // Single month: aggregate all closed weeks in that month
+    const targetMonth = parseInt(period);
+    Object.entries(yearBooks).forEach(([wn, wb]) => {
+      if (wb.month === targetMonth) {
+        accWeek(wb);
+        result.weeksData.push({ weekNum: parseInt(wn), ...wb });
+      }
+    });
+    // Also pull from analytics monthly data as fallback
+    const ad = yearAnalytics[targetMonth] || {};
+    if (result.cogsTotal === 0 && ad.cogs) result.cogsTotal = ad.cogs;
+    result.cogsTotalBudget += getMonthBudget(year, targetMonth);
+    result.laborBudget += getLaborBudget(year, targetMonth);
+    // Sales from weekly sales if no closed books
+    if (result.salesTotal === 0) {
+      const monthSales = weeklySales.filter(e => e.weekStart && parseInt(e.weekStart.split('-')[1]) === targetMonth && e.weekStart.startsWith(year));
+      monthSales.forEach(e => { result.salesTotal += e.total||0; result.salesCafeteria += e.cafe||0; result.salesBarista += e.barista||0; result.salesRetail += (e.retailTotal||e.other||0); result.salesCatering += e.catering||0; });
+    }
+
+  } else {
+    // YTD / Full year: aggregate all closed weeks + open months
+    const allWeekNums = Object.keys(yearBooks).map(Number);
+    allWeekNums.forEach(wn => {
+      const wb = yearBooks[wn];
+      accWeek(wb);
+      result.weeksData.push({ weekNum: wn, ...wb });
+    });
+    // Fill in from analytics/labor for months without closed weeks
+    for (let m = 1; m <= currentMonth; m++) {
+      const monthHasBooks = Object.values(yearBooks).some(wb => wb.month === m);
+      if (!monthHasBooks) {
+        const ad = yearAnalytics[m] || {};
+        result.cogsTotal     += ad.cogs || 0;
+        result.cogsPurchases += ad.purchases || 0;
+        result.cogsTotalBudget += getMonthBudget(year, m);
+        result.laborBudget += getLaborBudget(year, m);
+        const ld = yearLabor[m] || {};
+        result.laborRegular  += ld.regPay || 0;
+        result.laborOT       += ld.otPay || 0;
+        result.laborBenefits += ld.benefits || 0;
+        result.laborOther    += ld.other || 0;
+        result.laborTotal    += ld.total || 0;
+        const sd = yearSales[m] || {};
+        result.salesTotal     += sd.total || 0;
+        result.salesCafeteria += sd.cafeteria || 0;
+        result.salesBarista   += sd.barista || 0;
+      }
+    }
+    // If no weekly sales anywhere, pull from weekly sales entries
+    if (result.salesTotal === 0) {
+      weeklySales.filter(e => e.weekStart && e.weekStart.startsWith(year)).forEach(e => {
+        result.salesTotal += e.total||0; result.salesCafeteria += e.cafe||0;
+        result.salesBarista += e.barista||0; result.salesRetail += (e.retailTotal||e.other||0);
+        result.salesCatering += e.catering||0;
+      });
+    }
+  }
+
+  // COGS GL split
+  result.cogsCafeteria = result.cogsTotal * cafePct;
+  result.cogsBarista   = result.cogsTotal * baristaPct;
+  result.cogsCafeBudget    = result.cogsTotalBudget * cafePct;
+  result.cogsBaristaBudget = result.cogsTotalBudget * baristaPct;
+
+  // AP invoices
+  const yearStr = String(year);
+  const filterInv = (fn) => invoices.filter(inv => inv.invoiceDate && inv.invoiceDate.startsWith(yearStr) && fn(inv));
+  const periodFilter = (inv) => {
+    if (period === 'ytd') return true;
+    if (plView === 'week') {
+      return inv.invoiceDate && getISOWeekNumber(inv.invoiceDate) === parseInt(period.replace('w',''));
+    }
+    return parseInt(inv.invoiceDate.split('-')[1]) === parseInt(period);
+  };
+  result.apTotal   = filterInv(periodFilter).reduce((s,i) => s + (i.amount||0), 0);
+  result.apPaid    = filterInv(i => periodFilter(i) && i.status === 'Paid').reduce((s,i) => s + (i.amount||0), 0);
+  result.apBalance = result.apTotal - result.apPaid;
+  result.apCafe    = filterInv(i => periodFilter(i) && (i.glCode||'').includes('12000')).reduce((s,i) => s+(i.amount||0), 0);
+  result.apBarista = filterInv(i => periodFilter(i) && (i.glCode||'').includes('12002')).reduce((s,i) => s+(i.amount||0), 0);
+
+  // Current inventory
+  result.invClosing = result.invClosing || Object.values(locations).reduce((s, lItems) => s + lItems.reduce((ss, it) => ss + computeTotal(it), 0), 0);
+
+  return result;
+}
+
+// ── P&L row renderer ──────────────────────────────────────
+function plRow({ label, actual=0, budget=0, indent=0, isSection=false, isTotal=false, isGrandTotal=false, salesTotal=0, positive=false }) {
+  const f = (v) => '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const variance  = (budget > 0 || actual > 0) ? actual - budget : null;
+  const isOver    = !positive && variance !== null && variance > 0  && budget > 0;
+  const isUnder   = !positive && variance !== null && variance < 0  && budget > 0;
+  const pctSales  = salesTotal > 0 ? (actual / salesTotal * 100) : null;
+  const varPct    = budget > 0 ? (variance / budget * 100) : null;
+  const pad       = 24 + indent * 18;
+
+  if (isSection) return `<tr style="background:#f9fafb;"><td colspan="6" style="padding:9px 24px;font-size:11px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;border-top:2px solid var(--border);">${label}</td></tr>`;
+
+  if (isGrandTotal) {
+    const bg = positive ? (actual >= 0 ? '#0a2e0a' : '#2e0a0a') : '#1a1a1a';
+    const tc = positive ? (actual >= 0 ? '#6ee7b7' : '#fca5a5') : 'white';
+    return `<tr style="background:${bg};">
+      <td style="padding:13px 24px 13px ${pad}px;font-size:14px;font-weight:900;color:white;">${label}</td>
+      <td style="padding:13px 16px;text-align:right;font-size:13px;color:rgba(255,255,255,.55);">${budget>0?f(budget):'—'}</td>
+      <td style="padding:13px 16px;text-align:right;font-size:14px;font-weight:900;color:${tc};">${f(actual)}</td>
+      <td style="padding:13px 16px;text-align:right;font-size:13px;color:${variance===null?'rgba(255,255,255,.3)':isOver?'#fca5a5':isUnder?'#6ee7b7':'rgba(255,255,255,.55)'};">${variance!==null?(variance>=0?'+':'')+f(variance):'—'}</td>
+      <td style="padding:13px 16px;text-align:right;font-size:12px;color:rgba(255,255,255,.4);">${varPct!==null?(varPct>=0?'+':'')+varPct.toFixed(1)+'%':'—'}</td>
+      <td style="padding:13px 24px;text-align:right;font-size:12px;color:rgba(255,255,255,.4);">${pctSales!==null?pctSales.toFixed(1)+'%':'—'}</td>
+    </tr>`;
+  }
+  if (isTotal) return `<tr style="background:${isOver?'#fde8e8':isUnder?'#def7ec':'#f3f4f6'};border-top:1px solid var(--border);">
+    <td style="padding:11px 24px 11px ${pad}px;font-size:13px;font-weight:700;color:#1a1a1a;">${label}</td>
+    <td style="padding:11px 16px;text-align:right;font-size:13px;font-weight:600;color:#6b7280;">${budget>0?f(budget):'—'}</td>
+    <td style="padding:11px 16px;text-align:right;font-size:13px;font-weight:800;color:#1a1a1a;">${f(actual)}</td>
+    <td style="padding:11px 16px;text-align:right;font-size:13px;font-weight:700;color:${variance===null?'#9ca3af':isOver?'#e02424':isUnder?'#057a55':'#6b7280'};">${variance!==null?(variance>=0?'+':'')+f(variance):'—'}</td>
+    <td style="padding:11px 16px;text-align:right;font-size:12px;color:${variance===null?'#9ca3af':isOver?'#e02424':isUnder?'#057a55':'#6b7280'};">${varPct!==null?(varPct>=0?'+':'')+varPct.toFixed(1)+'%':'—'}</td>
+    <td style="padding:11px 24px;text-align:right;font-size:12px;color:#6b7280;">${pctSales!==null?pctSales.toFixed(1)+'%':'—'}</td>
+  </tr>`;
+
+  return `<tr style="border-bottom:1px solid #f3f4f6;">
+    <td style="padding:9px 24px 9px ${pad}px;font-size:13px;color:#374151;">${label}</td>
+    <td style="padding:9px 16px;text-align:right;font-size:13px;color:#9ca3af;">${budget>0?f(budget):'—'}</td>
+    <td style="padding:9px 16px;text-align:right;font-size:13px;font-weight:600;color:#1a1a1a;">${f(actual)}</td>
+    <td style="padding:9px 16px;text-align:right;font-size:13px;font-weight:600;background:${variance===null?'':isOver?'#fde8e8':isUnder?'#def7ec':''};color:${variance===null?'#9ca3af':isOver?'#e02424':isUnder?'#057a55':'#6b7280'};">${variance!==null?(variance>=0?'+':'')+f(variance):'—'}</td>
+    <td style="padding:9px 16px;text-align:right;font-size:12px;color:${variance===null?'#9ca3af':isOver?'#e02424':isUnder?'#057a55':'#6b7280'};">${varPct!==null?(varPct>=0?'+':'')+varPct.toFixed(1)+'%':'—'}</td>
+    <td style="padding:9px 24px;text-align:right;font-size:12px;color:#9ca3af;">${pctSales!==null?pctSales.toFixed(1)+'%':'—'}</td>
+  </tr>`;
+}
+
+
+function renderPL() {
+  const tbody = document.getElementById('pl-tbody');
+  if (!tbody) return;
+
+  const year = (document.getElementById('an-year') || {value: String(new Date().getFullYear())}).value;
+  const period = (document.getElementById('pl-period') || {value: 'ytd'}).value;
+
+  updatePLPeriodSelector();
+
+  const d = getPeriodData(year);
+  const S = d.salesTotal;
+
+  // ── Period label ──
+  let periodLabel = 'Year to Date';
+  if (plView === 'week' && period !== 'ytd') {
+    const wn = parseInt(period.replace('w',''));
+    const wb = (weeklyBooks[year] || {})[wn];
+    periodLabel = `Week ${wn}${wb ? ` (${wb.weekStart} – ${wb.weekEnd})` : ' (open)'}`;
+  } else if (plView === 'month' && period !== 'ytd') {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    periodLabel = months[parseInt(period)-1] + ' ' + year;
+  } else if (plView === 'year') {
+    periodLabel = 'Full Year ' + year;
+  }
+
+  let rows = '';
+
+  // ── REVENUE ──
+  rows += plRow({ label: '💰 REVENUE', isSection: true });
+  rows += plRow({ label: 'Café Sales (GL 12000)', actual: d.salesCafeteria, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Barista Sales (GL 12002)', actual: d.salesBarista, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Retail Sales', actual: d.salesRetail, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Catering (all streams)', actual: d.salesCatering, budget: 0, indent: 2, salesTotal: S });
+  rows += plRow({ label: 'Total Revenue', actual: S, budget: d.salesBudget || 0, isTotal: true, salesTotal: S, positive: true });
+
+  // ── COGS ──
+  rows += plRow({ label: '🛒 COST OF GOODS SOLD (COGS)', isSection: true });
+  rows += plRow({ label: 'COGS — Café (GL 12000)', actual: d.cogsCafeteria, budget: d.cogsCafeBudget, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'COGS — Barista (GL 12002)', actual: d.cogsBarista, budget: d.cogsBaristaBudget, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Purchases (from AP)', actual: d.apTotal, budget: d.cogsTotalBudget, indent: 1, salesTotal: S });
+  rows += plRow({ label: '└ Paid', actual: d.apPaid, budget: 0, indent: 2, salesTotal: S });
+  rows += plRow({ label: '└ Outstanding', actual: d.apBalance, budget: 0, indent: 2, salesTotal: S });
+  rows += plRow({ label: '└ AP Café (GL 12000)', actual: d.apCafe, budget: 0, indent: 2, salesTotal: S });
+  rows += plRow({ label: '└ AP Barista (GL 12002)', actual: d.apBarista, budget: 0, indent: 2, salesTotal: S });
+  rows += plRow({ label: 'Total COGS', actual: d.cogsTotal, budget: d.cogsTotalBudget, isTotal: true, salesTotal: S });
+
+  const grossProfit = S - d.cogsTotal;
+  const grossBudget = d.salesBudget > 0 ? d.salesBudget - d.cogsTotalBudget : 0;
+  rows += plRow({ label: '📈 GROSS PROFIT', actual: grossProfit, budget: grossBudget, isTotal: true, positive: true, salesTotal: S });
+
+  // ── LABOR ──
+  rows += plRow({ label: '👥 LABOR COSTS', isSection: true });
+  rows += plRow({ label: 'Regular Pay', actual: d.laborRegular, budget: d.laborBudget * (d.laborRegular / (d.laborTotal || 1)), indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Overtime Pay', actual: d.laborOT, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Benefits & Taxes', actual: d.laborBenefits, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Other Labor', actual: d.laborOther, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Total Labor', actual: d.laborTotal, budget: d.laborBudget, isTotal: true, salesTotal: S });
+
+  const totalOpCosts = d.cogsTotal + d.laborTotal;
+  const totalOpBudget = d.cogsTotalBudget + d.laborBudget;
+  rows += plRow({ label: '⚙️ TOTAL OPERATING COSTS', actual: totalOpCosts, budget: totalOpBudget, isTotal: true, salesTotal: S });
+
+  const operatingIncome = S - totalOpCosts;
+  const operatingBudget = d.salesBudget > 0 ? d.salesBudget - totalOpBudget : 0;
+  rows += plRow({ label: '🏁 NET OPERATING INCOME', actual: operatingIncome, budget: operatingBudget, isGrandTotal: true, positive: true, salesTotal: S });
+
+  // ── INVENTORY ──
+  rows += plRow({ label: '📦 INVENTORY', isSection: true });
+  const invCafe3 = Object.values(locations).reduce((s, lItems) => s + lItems.filter(it => it.glCode.includes('12000')).reduce((ss, it) => ss + computeTotal(it), 0), 0);
+  const invBar3  = Object.values(locations).reduce((s, lItems) => s + lItems.filter(it => it.glCode.includes('12002')).reduce((ss, it) => ss + computeTotal(it), 0), 0);
+  const totalInv = invCafe3 + invBar3;
+  if (d.invOpening > 0) rows += plRow({ label: 'Opening Inventory', actual: d.invOpening, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Closing Inventory — Café (GL 12000)', actual: invCafe3, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Closing Inventory — Barista (GL 12002)', actual: invBar3, budget: 0, indent: 1, salesTotal: S });
+  rows += plRow({ label: 'Total Closing Inventory', actual: totalInv, budget: budgets.invBudget || 0, isTotal: true, salesTotal: S });
+
+  // ── WEEK/MONTH DRILLDOWN TABLE ──
+  if (d.weeksData && d.weeksData.length > 1) {
+    rows += plRow({ label: `📋 ${plView === 'month' ? 'WEEKLY' : 'PERIOD'} BREAKDOWN`, isSection: true });
+    rows += `<tr><td colspan="6" style="padding:0;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#f3f4f6;">
+          <th style="padding:8px 16px;text-align:left;">Period</th>
+          <th style="padding:8px;text-align:right;">Revenue</th>
+          <th style="padding:8px;text-align:right;">COGS</th>
+          <th style="padding:8px;text-align:right;">Labor</th>
+          <th style="padding:8px;text-align:right;">Net Income</th>
+          <th style="padding:8px;text-align:right;">Margin %</th>
+          <th style="padding:8px;text-align:right;">Status</th>
+        </tr></thead><tbody>`;
+    d.weeksData.sort((a,b)=>a.weekNum-b.weekNum).forEach(w => {
+      const wRev = (w.sales && w.sales.total) || 0;
+      const wCogs = (w.cogs && w.cogs.total) || 0;
+      const wLab = (w.labor && w.labor.total) || 0;
+      const wNet = wRev - wCogs - wLab;
+      const wMarg = wRev > 0 ? (wNet/wRev*100) : 0;
+      const label = plView === 'year' ? `Wk ${w.weekNum} (${(w.weekStart||'').slice(5)})` : `Wk ${w.weekNum}${w.weekStart?' — '+w.weekStart:''}`;
+      rows += `<tr style="border-bottom:1px solid #f3f4f6;">
+        <td style="padding:8px 16px;font-weight:600;">${label}</td>
+        <td style="padding:8px;text-align:right;color:#F15D3B;">$${wRev.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="padding:8px;text-align:right;color:#c27803;">$${wCogs.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="padding:8px;text-align:right;color:#6366f1;">$${wLab.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="padding:8px;text-align:right;font-weight:700;color:${wNet>=0?'#057a55':'#e02424'};">${wNet>=0?'+':''}$${wNet.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+        <td style="padding:8px;text-align:right;color:${wMarg>=0?'#057a55':'#e02424'};">${wMarg.toFixed(1)}%</td>
+        <td style="padding:8px;text-align:right;">${w.closed?'<span style="color:#057a55;font-weight:700;">🔒 Closed</span>':'<span style="color:#c27803;">📂 Open</span>'}</td>
+      </tr>`;
+    });
+    rows += '</tbody></table></td></tr>';
+  }
+
+  // ── RATIOS ──
+  rows += plRow({ label: '📐 KEY RATIOS', isSection: true });
+  const cogsRatio = S > 0 ? d.cogsTotal/S*100 : 0;
+  const laborRatio = S > 0 ? d.laborTotal/S*100 : 0;
+  const targetLaborPct = budgets.laborPct || 0;
+  rows += `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:10px 24px;font-size:13px;color:#374151;padding-left:44px;">COGS % of Sales</td><td style="padding:10px 16px;text-align:right;font-size:13px;color:#9ca3af;">—</td><td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:#1a1a1a;">${S>0?cogsRatio.toFixed(1)+'%':'—'}</td><td colspan="3"></td></tr>`;
+  rows += `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:10px 24px;font-size:13px;color:#374151;padding-left:44px;">Labor % of Sales</td><td style="padding:10px 16px;text-align:right;font-size:13px;color:#9ca3af;">${targetLaborPct?targetLaborPct.toFixed(1)+'%':'—'}</td><td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:${laborRatio>targetLaborPct&&targetLaborPct>0?'#e02424':'#1a1a1a'};">${S>0?laborRatio.toFixed(1)+'%':'—'}</td><td style="padding:10px 16px;text-align:right;font-size:13px;color:${laborRatio>targetLaborPct&&targetLaborPct>0?'#e02424':'#057a55'};">${targetLaborPct>0&&S>0?(laborRatio>targetLaborPct?'⚠️ Over':'✅ Under'):'—'}</td><td colspan="2"></td></tr>`;
+  rows += `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:10px 24px;font-size:13px;color:#374151;padding-left:44px;">Gross Margin %</td><td style="padding:10px 16px;text-align:right;font-size:13px;color:#9ca3af;">—</td><td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:${grossProfit>=0?'#057a55':'#e02424'};">${S>0?(grossProfit/S*100).toFixed(1)+'%':'—'}</td><td colspan="3"></td></tr>`;
+  rows += `<tr><td style="padding:10px 24px;font-size:13px;color:#374151;padding-left:44px;">Operating Margin %</td><td style="padding:10px 16px;text-align:right;font-size:13px;color:#9ca3af;">—</td><td style="padding:10px 16px;text-align:right;font-size:13px;font-weight:600;color:${operatingIncome>=0?'#057a55':'#e02424'};">${S>0?(operatingIncome/S*100).toFixed(1)+'%':'—'}</td><td colspan="3"></td></tr>`;
+
+  tbody.innerHTML = rows;
+
+  // Update header subtitle
+  const subtitle = document.querySelector('#tab-analytics .modal-overlay ~ * .tab-content *');
+}
+
+// ── WEEKLY CLOSE MODAL ──
+function openWeeklyCloseModal(weekNum=null) {
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const year = String(today.getFullYear());
+  const wn = weekNum || getISOWeekNumber(monday.toISOString().split('T')[0]);
+
+  document.getElementById('wcm-week-start').value = monday.toISOString().split('T')[0];
+  document.getElementById('wcm-week-end').value = sunday.toISOString().split('T')[0];
+  document.getElementById('wcm-week-num').value = wn;
+  document.getElementById('wcm-editing-key').value = '';
+
+  // Pre-fill from existing closed books
+  const existingBook = (weeklyBooks[year] || {})[wn];
+  if (existingBook) {
+    document.getElementById('wcm-week-start').value = existingBook.weekStart || monday.toISOString().split('T')[0];
+    document.getElementById('wcm-week-end').value = existingBook.weekEnd || sunday.toISOString().split('T')[0];
+    document.getElementById('wcm-sale-cafe').value = (existingBook.sales && existingBook.sales.cafe) || '';
+    document.getElementById('wcm-sale-barista').value = (existingBook.sales && existingBook.sales.barista) || '';
+    document.getElementById('wcm-sale-retail').value = (existingBook.sales && existingBook.sales.retail) || '';
+    document.getElementById('wcm-sale-catering').value = (existingBook.sales && existingBook.sales.catering) || '';
+    document.getElementById('wcm-sale-budget').value = (existingBook.sales && existingBook.sales.budget) || '';
+    document.getElementById('wcm-inv-open').value = (existingBook.inventory && existingBook.inventory.opening) || '';
+    document.getElementById('wcm-purchases').value = (existingBook.cogs && existingBook.cogs.purchases) || '';
+    document.getElementById('wcm-inv-close').value = (existingBook.inventory && existingBook.inventory.closing) || '';
+    document.getElementById('wcm-labor-reg').value = (existingBook.labor && existingBook.labor.regular) || '';
+    document.getElementById('wcm-labor-ot').value = (existingBook.labor && existingBook.labor.ot) || '';
+    document.getElementById('wcm-labor-benefits').value = (existingBook.labor && existingBook.labor.benefits) || '';
+    document.getElementById('wcm-labor-other').value = (existingBook.labor && existingBook.labor.other) || '';
+    document.getElementById('wcm-notes').value = existingBook.notes || '';
+    document.getElementById('wcm-editing-key').value = wn;
+  } else {
+    // Auto-fill from this week's sales entries
+    const weekSales = weeklySales.filter(e => e.weekStart && getISOWeekNumber(e.weekStart) === wn && e.weekStart.startsWith(year));
+    if (weekSales.length > 0) {
+      document.getElementById('wcm-sale-cafe').value = weekSales.reduce((s,e)=>s+(e.cafe||0),0) || '';
+      document.getElementById('wcm-sale-barista').value = weekSales.reduce((s,e)=>s+(e.barista||0),0) || '';
+      document.getElementById('wcm-sale-retail').value = weekSales.reduce((s,e)=>s+(e.retailTotal||e.other||0),0) || '';
+      document.getElementById('wcm-sale-catering').value = weekSales.reduce((s,e)=>s+(e.catering||0),0) || '';
+      document.getElementById('wcm-sale-budget').value = weekSales.reduce((s,e)=>s+(e.budget||0),0) || '';
+    }
+    ['wcm-inv-open','wcm-purchases','wcm-inv-close','wcm-labor-reg','wcm-labor-ot','wcm-labor-benefits','wcm-labor-other','wcm-notes'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    // Auto prior closing → this opening
+    const priorBook = (weeklyBooks[year] || {})[wn - 1];
+    if (priorBook && priorBook.inventory && priorBook.inventory.closing) {
+      document.getElementById('wcm-inv-open').value = priorBook.inventory.closing;
+    }
+  }
+  // Labor budget display
+  const lbDisp = document.getElementById('wcm-labor-budget-display');
+  const weeklyLaborBudget = budgets.laborWeekly || 0;
+  if (lbDisp) lbDisp.textContent = weeklyLaborBudget > 0 ? '$' + weeklyLaborBudget.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) : 'Not set';
+  wcmCalc();
+  openModal('weekly-close-modal');
+}
+
+function wcmAutoFill() {
+  const start = document.getElementById('wcm-week-start').value;
+  if (!start) return;
+  const d = new Date(start);
+  d.setDate(d.getDate() + 6);
+  document.getElementById('wcm-week-end').value = d.toISOString().split('T')[0];
+  document.getElementById('wcm-week-num').value = getISOWeekNumber(start);
+}
+
+function wcmFillPurchases() {
+  const start = document.getElementById('wcm-week-start').value;
+  if (!start) { alert('Set week start date first'); return; }
+  const wn = getISOWeekNumber(start);
+  const year = start.split('-')[0];
+  const weekPurchases = invoices
+    .filter(inv => inv.invoiceDate && getISOWeekNumber(inv.invoiceDate) === wn && inv.invoiceDate.startsWith(year))
+    .reduce((s, inv) => s + (inv.amount || 0), 0);
+  document.getElementById('wcm-purchases').value = weekPurchases.toFixed(2);
+  wcmCalc();
+  toast(`Pulled $${weekPurchases.toFixed(2)} from AP invoices`, 'green');
+}
+
+function wcmFillCurrentInv() {
+  const currentInv = Object.values(locations).reduce((s, lItems) => s + lItems.reduce((ss, it) => ss + computeTotal(it), 0), 0);
+  document.getElementById('wcm-inv-close').value = currentInv.toFixed(2);
+  wcmCalc();
+}
+
+function wcmCalc() {
+  const g = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+  const fmt = (v) => '$' + v.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtSm = (v) => '$' + Math.round(v).toLocaleString('en-US');
+
+  const cafe = g('wcm-sale-cafe'), barista = g('wcm-sale-barista'), retail = g('wcm-sale-retail'), catering = g('wcm-sale-catering');
+  const salesTotal = cafe + barista + retail;
+  const invOpen = g('wcm-inv-open'), purchases = g('wcm-purchases'), invClose = g('wcm-inv-close');
+  const cogs = invOpen + purchases - invClose;
+  const laborReg = g('wcm-labor-reg'), laborOT = g('wcm-labor-ot'), laborBenefits = g('wcm-labor-benefits'), laborOther = g('wcm-labor-other');
+  const labor = laborReg + laborOT + laborBenefits + laborOther;
+  const net = salesTotal - cogs - labor;
+
+  const s = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  s('wcm-sales-total', fmt(salesTotal));
+  s('wcm-cogs-total', fmt(Math.max(0, cogs)));
+  s('wcm-labor-total', fmt(labor));
+  s('wcm-p-sales', fmtSm(salesTotal));
+  s('wcm-p-cogs', fmtSm(cogs));
+  s('wcm-p-labor', fmtSm(labor));
+  s('wcm-p-net', fmtSm(net));
+  const netEl = document.getElementById('wcm-p-net');
+  if (netEl) netEl.style.color = net >= 0 ? '#7effc4' : '#fca5a5';
+  const marginEl = document.getElementById('wcm-p-margin');
+  if (marginEl) marginEl.textContent = salesTotal > 0 ? (net/salesTotal*100).toFixed(1) + '% margin' : '—';
+}
+
+function closeWeekBooks() {
+  const weekStart = document.getElementById('wcm-week-start').value;
+  if (!weekStart) { alert('Week start date required'); return; }
+  const year = weekStart.split('-')[0];
+  const weekNum = parseInt(document.getElementById('wcm-week-num').value) || getISOWeekNumber(weekStart);
+  const month = parseInt(weekStart.split('-')[1]);
+  const g = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+
+  const cafe = g('wcm-sale-cafe'), barista = g('wcm-sale-barista'), retail = g('wcm-sale-retail'), catering = g('wcm-sale-catering');
+  const salesTotal = cafe + barista + retail;
+  const invOpen = g('wcm-inv-open'), purchases = g('wcm-purchases'), invClose = g('wcm-inv-close');
+  const cogs = Math.max(0, invOpen + purchases - invClose);
+  const laborReg = g('wcm-labor-reg'), laborOT = g('wcm-labor-ot'), laborBenefits = g('wcm-labor-benefits'), laborOther = g('wcm-labor-other');
+  const laborTotal = laborReg + laborOT + laborBenefits + laborOther;
+
+  if (!weeklyBooks[year]) weeklyBooks[year] = {};
+  weeklyBooks[year][weekNum] = {
+    weekNum, month, year: parseInt(year),
+    weekStart, weekEnd: document.getElementById('wcm-week-end').value,
+    sales: { cafe, barista, retail, catering, total: salesTotal, budget: g('wcm-sale-budget') },
+    cogs: { opening: invOpen, purchases, closing: invClose, total: cogs },
+    labor: { regular: laborReg, ot: laborOT, benefits: laborBenefits, other: laborOther, total: laborTotal },
+    inventory: { opening: invOpen, closing: invClose },
+    notes: document.getElementById('wcm-notes').value,
+    closed: true,
+    closedAt: new Date().toISOString(),
+  };
+
+  saveWeeklyBooks();
+
+  // Sync sales to plSalesData for backward compat
+  if (!plSalesData[year]) plSalesData[year] = {};
+  if (!plSalesData[year][month]) plSalesData[year][month] = { total: 0, cafeteria: 0, barista: 0 };
+  plSalesData[year][month].total     += salesTotal;
+  plSalesData[year][month].cafeteria += cafe;
+  plSalesData[year][month].barista   += barista;
+  localStorage.setItem('inv_pl_sales', JSON.stringify(plSalesData));
+
+  closeModal('weekly-close-modal');
+  renderPL();
+  toast(`Week ${weekNum} books closed! 🔒`, 'green');
+}
+
+function exportPL() {
+  const year = (document.getElementById('an-year') || {value: String(new Date().getFullYear())}).value;
+  const d = getPeriodData(year);
+  const S = d.salesTotal;
+  const lines = [
+    ['P&L Export — ' + year],
+    ['Line Item','Budget','Actual','Variance $','% of Sales'],
+    ['REVENUE'],
+    ['Café Sales (12000)', '', d.salesCafeteria.toFixed(2)],
+    ['Barista Sales (12002)', '', d.salesBarista.toFixed(2)],
+    ['Retail Sales', '', d.salesRetail.toFixed(2)],
+    ['Total Revenue', d.salesBudget.toFixed(2), S.toFixed(2), (S-d.salesBudget).toFixed(2)],
+    ['COGS'],
+    ['Total COGS', d.cogsTotalBudget.toFixed(2), d.cogsTotal.toFixed(2), (d.cogsTotal-d.cogsTotalBudget).toFixed(2), S>0?(d.cogsTotal/S*100).toFixed(1)+'%':''],
+    ['Purchases (AP)', '', d.apTotal.toFixed(2)],
+    ['LABOR'],
+    ['Regular Pay', '', d.laborRegular.toFixed(2)],
+    ['Overtime', '', d.laborOT.toFixed(2)],
+    ['Benefits', '', d.laborBenefits.toFixed(2)],
+    ['Total Labor', d.laborBudget.toFixed(2), d.laborTotal.toFixed(2), (d.laborTotal-d.laborBudget).toFixed(2)],
+    ['TOTALS'],
+    ['Total Operating Costs', (d.cogsTotalBudget+d.laborBudget).toFixed(2), (d.cogsTotal+d.laborTotal).toFixed(2)],
+    ['Net Operating Income', '', (S-d.cogsTotal-d.laborTotal).toFixed(2)],
+    [''],
+    ['WEEKLY BREAKDOWN'],
+    ['Week #','Week Start','Week End','Revenue','COGS','Labor','Net Income','Margin %','Status'],
+    ...(d.weeksData||[]).sort((a,b)=>a.weekNum-b.weekNum).map(w => {
+      const wR=(w.sales&&w.sales.total)||0, wC=(w.cogs&&w.cogs.total)||0, wL=(w.labor&&w.labor.total)||0;
+      return [w.weekNum,w.weekStart||'',w.weekEnd||'',wR.toFixed(2),wC.toFixed(2),wL.toFixed(2),(wR-wC-wL).toFixed(2),wR>0?((wR-wC-wL)/wR*100).toFixed(1)+'%':'',w.closed?'Closed':'Open'];
+    }),
+  ];
+  const csv = lines.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`pl-${year}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('P&L exported!', 'green');
+}
+
+
+
+
+function saveSalesStorage() { localStorage.setItem('inv_weekly_sales', JSON.stringify(weeklySales)); }
+function saveSalesBudgets() { localStorage.setItem('inv_sales_budgets', JSON.stringify(salesBudgets)); }
+
+function getSalesMonthBudget(year, month) {
+  return (salesBudgets.monthly && salesBudgets.monthly[year] && salesBudgets.monthly[year][month]) || 0;
+}
+
+function getWeekNumber(dateStr) {
+  const d = new Date(dateStr);
+  const start = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
+}
+
+function autoFillWeekEnd() {
+  const start = document.getElementById('sem-week-start').value;
+  if (!start) return;
+  const d = new Date(start);
+  d.setDate(d.getDate() + 6);
+  document.getElementById('sem-week-end').value = d.toISOString().split('T')[0];
+  // Auto-fill week number
+  document.getElementById('sem-week-num').value = getWeekNumber(start);
+}
+
+function calcSalesTotal() {
+  const fmt = (v) => '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const g = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+
+  const cafeReg = g('sem-cafe-az-reg') + g('sem-cafe-wt-reg') + g('sem-cafe-ay-reg') + g('sem-cafe-n-reg') + g('sem-cafe-q-reg') + g('sem-cafe-r-reg') + g('sem-cafe-s-reg');
+  const cafeCat = g('sem-cafe-az-cat') + g('sem-cafe-wt-cat') + g('sem-cafe-ay-cat') + g('sem-cafe-n-cat') + g('sem-cafe-q-cat') + g('sem-cafe-r-cat') + g('sem-cafe-s-cat');
+  const cafeTotal = cafeReg + cafeCat;
+
+  const baristaReg = g('sem-barista-register');
+  const baristaCat = g('sem-barista-catering');
+  const baristaTotal = baristaReg + baristaCat;
+
+  const retailReg = g('sem-retail');
+  const retailCat = g('sem-retail-catering');
+  const retailTotal = retailReg + retailCat;
+
+  const total = cafeTotal + baristaTotal + retailTotal;
+  const budget = g('sem-budget');
+  const variance = budget > 0 ? total - budget : null;
+
+  const s = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = fmt(val); };
+  s('sem-cafe-subtotal', cafeTotal);
+  s('sem-barista-subtotal', baristaTotal);
+  s('sem-retail-subtotal', retailTotal);
+  s('sem-cafe-display', cafeTotal);
+  s('sem-barista-display', baristaTotal);
+  s('sem-retail-display', retailTotal);
+  s('sem-total-display', total);
+
+  const varEl = document.getElementById('sem-variance-display');
+  if (varEl) {
+    if (variance !== null) {
+      varEl.textContent = (variance >= 0 ? '✅ +' : '⚠️ ') + '$' + Math.abs(variance).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' vs budget';
+      varEl.style.color = variance >= 0 ? '#6ee7b7' : '#fca5a5';
+    } else { varEl.textContent = '—'; varEl.style.color = '#6b7280'; }
+  }
+}
+
+function openSalesEntryModal(id=null) {
+  document.getElementById('sem-editing-id').value = id || '';
+  document.getElementById('sem-title').textContent = id ? 'Edit Sales Entry' : '💵 Enter Weekly Sales';
+  const SALES_FIELDS = ['sem-cafe-az-reg','sem-cafe-az-cat','sem-cafe-wt-reg','sem-cafe-wt-cat','sem-cafe-ay-reg','sem-cafe-ay-cat','sem-cafe-n-reg','sem-cafe-n-cat','sem-cafe-q-reg','sem-cafe-q-cat','sem-cafe-r-reg','sem-cafe-r-cat','sem-cafe-s-reg','sem-cafe-s-cat','sem-barista-register','sem-barista-catering','sem-retail','sem-retail-catering','sem-budget','sem-notes'];
+  if (id) {
+    const entry = weeklySales.find(e => e.id === id);
+    if (!entry) return;
+    document.getElementById('sem-week-start').value = entry.weekStart || '';
+    document.getElementById('sem-week-end').value = entry.weekEnd || '';
+    document.getElementById('sem-week-num').value = entry.weekNum || '';
+    document.getElementById('sem-location').value = entry.location || 'All Locations';
+    document.getElementById('sem-cafe-az-reg').value = entry.cafe_az_reg || '';
+    document.getElementById('sem-cafe-az-cat').value = entry.cafe_az_cat || '';
+    document.getElementById('sem-cafe-wt-reg').value = entry.cafe_wt_reg || '';
+    document.getElementById('sem-cafe-wt-cat').value = entry.cafe_wt_cat || '';
+    document.getElementById('sem-cafe-ay-reg').value = entry.cafe_ay_reg || '';
+    document.getElementById('sem-cafe-ay-cat').value = entry.cafe_ay_cat || '';
+    document.getElementById('sem-cafe-n-reg').value = entry.cafe_n_reg || '';
+    document.getElementById('sem-cafe-n-cat').value = entry.cafe_n_cat || '';
+    document.getElementById('sem-cafe-q-reg').value = entry.cafe_q_reg || '';
+    document.getElementById('sem-cafe-q-cat').value = entry.cafe_q_cat || '';
+    document.getElementById('sem-cafe-r-reg').value = entry.cafe_r_reg || '';
+    document.getElementById('sem-cafe-r-cat').value = entry.cafe_r_cat || '';
+    document.getElementById('sem-cafe-s-reg').value = entry.cafe_s_reg || '';
+    document.getElementById('sem-cafe-s-cat').value = entry.cafe_s_cat || '';
+    document.getElementById('sem-barista-register').value = entry.baristaRegister || '';
+    document.getElementById('sem-barista-catering').value = entry.baristaCatering || '';
+    document.getElementById('sem-retail').value = entry.retail || '';
+    document.getElementById('sem-retail-catering').value = entry.retailCatering || '';
+    document.getElementById('sem-budget').value = entry.budget || '';
+    document.getElementById('sem-notes').value = entry.notes || '';
+  } else {
+    // Default to current week
+    const today = new Date();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    document.getElementById('sem-week-start').value = monday.toISOString().split('T')[0];
+    document.getElementById('sem-week-end').value = sunday.toISOString().split('T')[0];
+    document.getElementById('sem-week-num').value = getWeekNumber(monday.toISOString().split('T')[0]);
+    document.getElementById('sem-location').value = 'All Locations';
+    SALES_FIELDS.forEach(fid => { const el = document.getElementById(fid); if (el) el.value = ''; });
+  }
+  calcSalesTotal();
+  openModal('sales-entry-modal');
+}
+
+function saveSalesEntry() {
+  const weekStart = document.getElementById('sem-week-start').value;
+  if (!weekStart) { alert('Week start date is required'); return; }
+  const g2 = (fid) => parseFloat(document.getElementById(fid)?.value) || 0;
+  const cafe_az_reg = g2('sem-cafe-az-reg');
+  const cafe_az_cat = g2('sem-cafe-az-cat');
+  const cafe_wt_reg = g2('sem-cafe-wt-reg');
+  const cafe_wt_cat = g2('sem-cafe-wt-cat');
+  const cafe_ay_reg = g2('sem-cafe-ay-reg');
+  const cafe_ay_cat = g2('sem-cafe-ay-cat');
+  const cafe_n_reg = g2('sem-cafe-n-reg');
+  const cafe_n_cat = g2('sem-cafe-n-cat');
+  const cafe_q_reg = g2('sem-cafe-q-reg');
+  const cafe_q_cat = g2('sem-cafe-q-cat');
+  const cafe_r_reg = g2('sem-cafe-r-reg');
+  const cafe_r_cat = g2('sem-cafe-r-cat');
+  const cafe_s_reg = g2('sem-cafe-s-reg');
+  const cafe_s_cat = g2('sem-cafe-s-cat');
+  const cafeRegister = cafe_az_reg + cafe_wt_reg + cafe_ay_reg + cafe_n_reg + cafe_q_reg + cafe_r_reg + cafe_s_reg;
+  const cafeCatering = cafe_az_cat + cafe_wt_cat + cafe_ay_cat + cafe_n_cat + cafe_q_cat + cafe_r_cat + cafe_s_cat;
+  const cafe = cafeRegister + cafeCatering;
+  const baristaRegister = g2('sem-barista-register');
+  const baristaCatering = g2('sem-barista-catering');
+  const barista = baristaRegister + baristaCatering;
+  const retail = g2('sem-retail');
+  const retailCatering = g2('sem-retail-catering');
+  const retailTotal = retail + retailCatering;
+  const catering = cafeCatering + baristaCatering + retailCatering;
+  const total = cafe + barista + retailTotal;
+  const editId = document.getElementById('sem-editing-id').value;
+
+  const entry = {
+    weekStart,
+    weekEnd: document.getElementById('sem-week-end').value,
+    weekNum: parseInt(document.getElementById('sem-week-num').value) || getWeekNumber(weekStart),
+    location: document.getElementById('sem-location').value,
+    // Stream totals (backward compat)
+    cafe, barista, other: retailTotal,
+    // Detailed line items
+    cafeRegister, cafeCatering,
+    // Per-location café breakdown
+    cafe_az_reg, cafe_az_cat, cafe_wt_reg, cafe_wt_cat, cafe_ay_reg, cafe_ay_cat, cafe_n_reg, cafe_n_cat, cafe_q_reg, cafe_q_cat, cafe_r_reg, cafe_r_cat, cafe_s_reg, cafe_s_cat,
+    baristaRegister, baristaCatering,
+    retail, retailCatering, retailTotal,
+    catering,
+    total,
+    budget: g2('sem-budget'),
+    notes: document.getElementById('sem-notes').value.trim(),
+  };
+
+  if (editId) {
+    const idx = weeklySales.findIndex(e => e.id === editId);
+    if (idx >= 0) weeklySales[idx] = { ...weeklySales[idx], ...entry, updatedAt: new Date().toISOString() };
+    toast('Sales entry updated', 'green');
+  } else {
+    weeklySales.push({ ...entry, id: 'WS-' + Date.now(), createdAt: new Date().toISOString() });
+    toast('Sales entry saved!', 'green');
+  }
+
+  // Sync to plSalesData for P&L use
+  syncSalesToPL();
+  saveSalesStorage();
+  closeModal('sales-entry-modal');
+  renderSalesTab();
+}
+
+function syncSalesToPL() {
+  // Aggregate weekly sales into monthly for P&L
+  weeklySales.forEach(entry => {
+    if (!entry.weekStart) return;
+    const year = entry.weekStart.split('-')[0];
+    const month = parseInt(entry.weekStart.split('-')[1]);
+    if (!plSalesData[year]) plSalesData[year] = {};
+    // Accumulate (we'll rebuild from scratch)
+  });
+  // Rebuild monthly totals from weekly entries
+  const rebuilt = {};
+  weeklySales.forEach(entry => {
+    if (!entry.weekStart) return;
+    const year = entry.weekStart.split('-')[0];
+    const month = parseInt(entry.weekStart.split('-')[1]);
+    if (!rebuilt[year]) rebuilt[year] = {};
+    if (!rebuilt[year][month]) rebuilt[year][month] = { total: 0, cafeteria: 0, barista: 0 };
+    rebuilt[year][month].total += entry.total || 0;
+    rebuilt[year][month].cafeteria += entry.cafe || 0;
+    rebuilt[year][month].barista += entry.barista || 0;
+  });
+  // Merge into plSalesData (don't overwrite manually entered data)
+  Object.entries(rebuilt).forEach(([year, months]) => {
+    if (!plSalesData[year]) plSalesData[year] = {};
+    Object.entries(months).forEach(([month, vals]) => {
+      plSalesData[year][month] = vals;
+    });
+  });
+  localStorage.setItem('inv_pl_sales', JSON.stringify(plSalesData));
+}
+
+function deleteSalesEntry(id) {
+  if (!confirm('Delete this sales entry?')) return;
+  weeklySales = weeklySales.filter(e => e.id !== id);
+  saveSalesStorage();
+  syncSalesToPL();
+  renderSalesTab();
+  toast('Entry deleted');
+}
+
+function renderSalesTab() {
+  const yearSel = document.getElementById('sales-year');
+  if (!yearSel) return;
+  // Sync with periodState
+  const uniqueYears = availableYears();
+  const year = periodState.year;
+  yearSel.innerHTML = uniqueYears.map(y => `<option value="${y}" ${y===year?'selected':''}>${y}</option>`).join('');
+  yearSel.value = year;
+
+  const locFilter = (document.getElementById('sales-location-filter')||{value:'all'}).value;
+  let filtered = weeklySales.filter(e => {
+    if (!e.weekStart || !e.weekStart.startsWith(year)) return false;
+    if (!inPeriod(e.weekStart)) return false;
+    return (locFilter === 'all' || e.location === locFilter || e.location === 'All Locations');
+  }).sort((a,b) => a.weekStart.localeCompare(b.weekStart));
+
+  const totalSales = filtered.reduce((s,e) => s + (e.total||0), 0);
+  const totalCafe = filtered.reduce((s,e) => s + (e.cafe||0), 0);
+  const totalBarista = filtered.reduce((s,e) => s + (e.barista||0), 0);
+  const totalBudget = filtered.reduce((s,e) => s + (e.budget||0), 0);
+  const avgWeekly = filtered.length > 0 ? totalSales / filtered.length : 0;
+  const currentMonth = new Date().getMonth() + 1;
+  const thisMonthSales = filtered.filter(e => parseInt(e.weekStart.split('-')[1]) === currentMonth).reduce((s,e) => s+(e.total||0), 0);
+
+  // KPI Cards
+  const kpiEl = document.getElementById('sales-kpi-cards');
+  if (kpiEl) kpiEl.innerHTML = `
+    <div class="loc-card" style="border-left-color:#F15D3B;">
+      <h3>YTD Total Sales</h3>
+      <div class="card-total">$${totalSales.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>${filtered.length} weeks entered</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#057a55;">
+      <h3>Cafeteria (GL 12000)</h3>
+      <div class="card-total" style="color:#057a55;">$${totalCafe.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>${totalSales>0?(totalCafe/totalSales*100).toFixed(1):'0'}% of total</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#6366f1;">
+      <h3>Barista (GL 12002)</h3>
+      <div class="card-total" style="color:#6366f1;">$${totalBarista.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>${totalSales>0?(totalBarista/totalSales*100).toFixed(1):'0'}% of total</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#057a55;">
+      <h3>Retail Sales</h3>
+      <div class="card-total" style="color:#057a55;">$${filtered.reduce((s,e)=>s+(e.retailTotal||e.other||0),0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>${totalSales>0?(filtered.reduce((s,e)=>s+(e.retailTotal||e.other||0),0)/totalSales*100).toFixed(1):'0'}% of total</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#c27803;">
+      <h3>Avg Weekly Sales</h3>
+      <div class="card-total" style="color:#c27803;">$${avgWeekly.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>Per week this year</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#c27803;">
+      <h3>Total Catering</h3>
+      <div class="card-total" style="color:#c27803;">$${filtered.reduce((s,e)=>s+(e.catering||0),0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>All catering streams</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:#0891b2;">
+      <h3>This Month</h3>
+      <div class="card-total" style="color:#0891b2;">$${thisMonthSales.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      <div class="card-breakdown"><span>${MONTHS[currentMonth-1]} ${year}</span></div>
+    </div>
+    <div class="loc-card" style="border-left-color:${totalBudget>0?totalSales>=totalBudget?'#057a55':'#e02424':'#6b7280'};">
+      <h3>vs Budget</h3>
+      <div class="card-total" style="color:${totalBudget>0?totalSales>=totalBudget?'#057a55':'#e02424':'#6b7280'};">${totalBudget>0?(totalSales>=totalBudget?'✅ ':'⚠️ ')+'$'+(totalSales-totalBudget).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}):'No budget'}</div>
+      <div class="card-breakdown"><span>${totalBudget>0?'Budget: $'+totalBudget.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}):'Set budget in entry'}</span></div>
+    </div>`;
+
+  // Render chart and tables
+  renderSalesChart(year, filtered);
+  renderSalesMonthlySummary(year, filtered);
+  renderSalesWeeklyTable(year, filtered);
+}
+
+function renderSalesChart(year, filtered) {
+  const container = document.getElementById('sales-bar-chart');
+  if (!container) return;
+  const chartType = (document.getElementById('sales-chart-type')||{value:'weekly'}).value;
+  const locColors = {'Café AZ':'#F15D3B','Café WT':'#E8A87C','Market AY':'#057a55','Perks N':'#6366f1','Café Q':'#c27803','Market R':'#0891b2','Café S':'#be185d','All Locations':'#F15D3B'};
+
+  if (chartType === 'monthly') {
+    // Monthly aggregation
+    const monthly = {};
+    filtered.forEach(e => {
+      const m = parseInt(e.weekStart.split('-')[1]);
+      if (!monthly[m]) monthly[m] = { total: 0, cafe: 0, barista: 0, budget: 0 };
+      monthly[m].total += e.total || 0;
+      monthly[m].cafe += e.cafe || 0;
+      monthly[m].barista += e.barista || 0;
+      monthly[m].budget += e.budget || 0;
+    });
+    const maxVal = Math.max(...Object.values(monthly).map(m => m.total), 1);
+    let html2 = '<div style="display:flex;align-items:flex-end;gap:6px;height:160px;padding-bottom:28px;min-width:400px;">';
+    for (let m = 1; m <= 12; m++) {
+      const md = monthly[m] || {};
+      const h = md.total > 0 ? Math.max(4, (md.total/maxVal)*140) : 0;
+      const bh = md.budget > 0 ? Math.max(2, (md.budget/maxVal)*140) : 0;
+      const over = md.total > md.budget && md.budget > 0;
+      html2 += `<div style="flex:1;min-width:28px;display:flex;flex-direction:column;align-items:center;position:relative;">
+        <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:140px;">
+          <div style="flex:2;background:${over?'#057a55':'#F15D3B'};border-radius:3px 3px 0 0;height:${h}px;cursor:pointer;" title="${MONTHS_SHORT[m-1]}: $${(md.total||0).toFixed(0)}"></div>
+          <div style="flex:1;background:#e5e7eb;border-radius:3px 3px 0 0;height:${bh}px;" title="Budget: $${(md.budget||0).toFixed(0)}"></div>
+        </div>
+        <div style="font-size:9px;color:#6b7280;position:absolute;bottom:0;white-space:nowrap;">${MONTHS_SHORT[m-1]}</div>
+      </div>`;
+    }
+    html2 += '</div>';
+    container.innerHTML = html2;
+  } else {
+    // Weekly view
+    const maxVal = Math.max(...filtered.map(e => e.total||0), 1);
+    let html2 = `<div style="display:flex;align-items:flex-end;gap:3px;height:160px;padding-bottom:28px;min-width:${Math.max(filtered.length*30, 400)}px;">`;
+    filtered.forEach((e, i) => {
+      const h = e.total > 0 ? Math.max(4, (e.total/maxVal)*140) : 0;
+      const bh = e.budget > 0 ? Math.max(2, (e.budget/maxVal)*140) : 0;
+      const over = e.total > e.budget && e.budget > 0;
+      const color = locColors[e.location] || '#F15D3B';
+      const label = `Wk ${e.weekNum||i+1}`;
+      html2 += `<div style="flex:0 0 28px;display:flex;flex-direction:column;align-items:center;position:relative;">
+        <div style="width:100%;display:flex;gap:1px;align-items:flex-end;height:140px;">
+          <div style="flex:2;background:${color};border-radius:2px 2px 0 0;height:${h}px;" title="Week ${e.weekNum}: $${(e.total||0).toFixed(0)} (${e.weekStart})"></div>
+          ${bh > 0 ? `<div style="flex:1;background:#e5e7eb;border-radius:2px 2px 0 0;height:${bh}px;" title="Budget: $${(e.budget||0).toFixed(0)}"></div>` : ''}
+        </div>
+        <div style="font-size:8px;color:#6b7280;position:absolute;bottom:0;transform:rotate(-45deg);transform-origin:left;white-space:nowrap;">${label}</div>
+      </div>`;
+    });
+    html2 += '</div>';
+    container.innerHTML = html2;
+  }
+
+  // Legend
+  const legend = document.getElementById('sales-chart-legend');
+  if (legend) {
+    const locs = [...new Set(filtered.map(e => e.location))].filter(Boolean);
+    legend.innerHTML = locs.map(loc => `<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:${locColors[loc]||'#F15D3B'};border-radius:2px;display:inline-block;"></span>${loc}</span>`).join('') +
+      '<span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;background:#e5e7eb;border-radius:2px;display:inline-block;border:1px dashed #9ca3af;"></span>Budget</span>';
+  }
+}
+
+function renderSalesMonthlySummary(year, filtered) {
+  const tbody = document.getElementById('sales-monthly-tbody');
+  const tfoot = document.getElementById('sales-monthly-tfoot');
+  if (!tbody) return;
+
+  // Update month filter dropdown
+  const mFilter = document.getElementById('sales-month-filter');
+  if (mFilter) {
+    const cur = mFilter.value;
+    mFilter.innerHTML = '<option value="all">All Months</option>' + MONTHS.map((n,i) => `<option value="${i+1}" ${String(i+1)===cur?'selected':''}>${n}</option>`).join('');
+  }
+
+  // Aggregate weekly entries into monthly buckets
+  const monthly = {};
+  filtered.forEach(e => {
+    const m = parseInt(e.weekStart.split('-')[1]);
+    if (!monthly[m]) monthly[m] = { total:0, cafe:0, barista:0, retail:0, catering:0, weeks:0, budget:0 };
+    monthly[m].total    += e.total    || 0;
+    monthly[m].cafe     += e.cafe     || 0;
+    monthly[m].barista  += e.barista  || 0;
+    monthly[m].retail   += (e.retailTotal || e.other || 0);
+    monthly[m].catering += (e.catering || 0);
+    monthly[m].weeks++;
+    monthly[m].budget   += e.budget   || 0;
+    // Per-location café
+    monthly[m].cafe_az = (monthly[m].cafe_az||0) + ((e.cafe_az_reg||0)+(e.cafe_az_cat||0));
+    monthly[m].cafe_wt = (monthly[m].cafe_wt||0) + ((e.cafe_wt_reg||0)+(e.cafe_wt_cat||0));
+    monthly[m].cafe_ay = (monthly[m].cafe_ay||0) + ((e.cafe_ay_reg||0)+(e.cafe_ay_cat||0));
+    monthly[m].cafe_n = (monthly[m].cafe_n||0) + ((e.cafe_n_reg||0)+(e.cafe_n_cat||0));
+    monthly[m].cafe_q = (monthly[m].cafe_q||0) + ((e.cafe_q_reg||0)+(e.cafe_q_cat||0));
+    monthly[m].cafe_r = (monthly[m].cafe_r||0) + ((e.cafe_r_reg||0)+(e.cafe_r_cat||0));
+    monthly[m].cafe_s = (monthly[m].cafe_s||0) + ((e.cafe_s_reg||0)+(e.cafe_s_cat||0));
+  });
+
+  const isCurrentYear = parseInt(year) === new Date().getFullYear();
+  const currentMonth  = new Date().getMonth() + 1;
+  const tf = v => '$' + (v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  // Running totals
+  let totTotal=0, totCafe=0, totBarista=0, totRetail=0, totCatering=0, totBudget=0,
+      totCafe_az = 0,
+  totCafe_wt = 0,
+  totCafe_ay = 0,
+  totCafe_n = 0,
+  totCafe_q = 0,
+  totCafe_r = 0,
+  totCafe_s = 0;
+
+  let rows = '';
+  for (let m = 1; m <= 12; m++) {
+    const md = monthly[m] || {};
+    const hasData = (md.total||0) > 0;
+    const monthBudget = md.budget || getSalesMonthBudget(year, m);
+    const variance    = hasData ? md.total - monthBudget : null;
+    const priorMd     = monthly[m-1] || {};
+    const vsMonthPct  = hasData && priorMd.total > 0 ? ((md.total - priorMd.total) / priorMd.total * 100) : null;
+    const isFuture  = isCurrentYear && m > currentMonth;
+    const isCurrent = isCurrentYear && m === currentMonth;
+
+    // Accumulate totals
+    totTotal    += md.total    || 0;
+    totCafe     += md.cafe     || 0;
+    totBarista  += md.barista  || 0;
+    totRetail   += md.retail   || 0;
+    totCatering += md.catering || 0;
+    totBudget   += monthBudget;
+    totCafe_az += (md.cafe_az||0);
+    totCafe_wt += (md.cafe_wt||0);
+    totCafe_ay += (md.cafe_ay||0);
+    totCafe_n += (md.cafe_n||0);
+    totCafe_q += (md.cafe_q||0);
+    totCafe_r += (md.cafe_r||0);
+    totCafe_s += (md.cafe_s||0);
+
+    rows += `<tr style="${isFuture?'opacity:0.35;':''}${isCurrent?'background:#fff8f5;font-weight:600;':''}">
+      <td><strong>${MONTHS[m-1]}</strong>${isCurrent?' <span style="background:#F15D3B;color:white;font-size:10px;padding:1px 6px;border-radius:8px;">NOW</span>':''}</td>
+      <td class="num" style="color:#F15D3B;font-weight:700;border-left:2px solid #fdd0c0;">${hasData ? tf(md.cafe) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-size:11px;color:#9ca3af;">${hasData && md.cafe_az ? '$'+md.cafe_az.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-size:11px;color:#9ca3af;">${hasData && md.cafe_wt ? '$'+md.cafe_wt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-size:11px;color:#9ca3af;">${hasData && md.cafe_ay ? '$'+md.cafe_ay.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-size:11px;color:#9ca3af;">${hasData && md.cafe_n ? '$'+md.cafe_n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-size:11px;color:#9ca3af;">${hasData && md.cafe_q ? '$'+md.cafe_q.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-size:11px;color:#9ca3af;">${hasData && md.cafe_r ? '$'+md.cafe_r.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-size:11px;color:#9ca3af;">${hasData && md.cafe_s ? '$'+md.cafe_s.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="color:#6366f1;font-weight:600;">${hasData ? tf(md.barista)  : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="color:#057a55;font-weight:600;">${hasData ? tf(md.retail)   : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="color:#c27803;">${hasData ? tf(md.catering) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="font-weight:800;color:#1a1a1a;">${hasData ? tf(md.total)   : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num">${monthBudget > 0 ? tf(monthBudget) : '<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="color:${variance===null?'#ccc':variance>=0?'#057a55':'#e02424'};font-weight:600;">${variance!==null?(variance>=0?'✅ +':'⚠️ ')+'$'+Math.abs(variance).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:#ccc;">—</span>'}</td>
+      <td class="num" style="color:${vsMonthPct===null?'#ccc':vsMonthPct>=0?'#057a55':'#e02424'};">${vsMonthPct!==null?(vsMonthPct>=0?'▲ ':'▼ ')+Math.abs(vsMonthPct).toFixed(1)+'%':'<span style="color:#ccc;">—</span>'}</td>
+      <td><button class="btn btn-sm btn-outline" onclick="openSalesEntryModal()" ${isFuture?'disabled':''}>+ Add</button></td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = rows;
+
+  const totVariance = totTotal - totBudget;
+  if (tfoot) tfoot.innerHTML = `<tr style="background:#1a1a1a;color:white;font-weight:700;">
+    <td>TOTAL</td>
+    <td class="num" style="color:#F15D3B;">${tf(totCafe)}</td>
+    <td class="num" style="font-size:11px;color:rgba(255,255,255,0.5);">${tf(totCafe_az)}</td>
+    <td class="num" style="font-size:11px;color:rgba(255,255,255,0.5);">${tf(totCafe_wt)}</td>
+    <td class="num" style="font-size:11px;color:rgba(255,255,255,0.5);">${tf(totCafe_ay)}</td>
+    <td class="num" style="font-size:11px;color:rgba(255,255,255,0.5);">${tf(totCafe_n)}</td>
+    <td class="num" style="font-size:11px;color:rgba(255,255,255,0.5);">${tf(totCafe_q)}</td>
+    <td class="num" style="font-size:11px;color:rgba(255,255,255,0.5);">${tf(totCafe_r)}</td>
+    <td class="num" style="font-size:11px;color:rgba(255,255,255,0.5);">${tf(totCafe_s)}</td>
+    <td class="num" style="color:#a5b4fc;">${tf(totBarista)}</td>
+    <td class="num" style="color:#6ee7b7;">${tf(totRetail)}</td>
+    <td class="num" style="color:#fcd34d;">${tf(totCatering)}</td>
+    <td class="num">${tf(totTotal)}</td>
+    <td class="num" style="color:rgba(255,255,255,0.6);">${tf(totBudget)}</td>
+    <td class="num" style="color:${totVariance>=0?'#7effc4':'#ff8c5a'};">${totVariance>=0?'+':''}${tf(totVariance)}</td>
+    <td></td><td></td>
+  </tr>`;
+}
+
+
+function renderSalesWeeklyTable(year, filtered) {
+  const tbody = document.getElementById('sales-weekly-tbody');
+  if (!tbody) return;
+
+  const yearToUse = year || (document.getElementById('sales-year')||{value:String(new Date().getFullYear())}).value;
+  const locFilter = (document.getElementById('sales-location-filter')||{value:'all'}).value;
+  const monthFilter = (document.getElementById('sales-month-filter')||{value:'all'}).value;
+
+  let entries = filtered || weeklySales.filter(e =>
+    e.weekStart && e.weekStart.startsWith(yearToUse) &&
+    (locFilter === 'all' || e.location === locFilter || e.location === 'All Locations')
+  ).sort((a,b) => a.weekStart.localeCompare(b.weekStart));
+
+  if (monthFilter !== 'all') {
+    entries = entries.filter(e => parseInt(e.weekStart.split('-')[1]) === parseInt(monthFilter));
+  }
+
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--gray);padding:32px;">No sales entries yet. Click "+ Enter Sales" to add your first week.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = entries.map((e, i) => {
+    const variance = e.budget > 0 ? e.total - e.budget : null;
+    const prior = entries[i-1];
+    const vsPrior = prior ? ((e.total - prior.total) / (prior.total||1) * 100) : null;
+    const overBudget = variance !== null && variance < 0;
+    const fmt3 = (v) => '$' + (v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const subCell = (v) => `<td class="num" style="font-size:11px;color:#9ca3af;">${fmt3(v)}</td>`;
+    return `<tr style="${overBudget?'background:#fff5f5;':''}">
+      <td style="font-weight:700;">Wk ${e.weekNum||''}</td>
+      <td style="font-size:12px;">${e.weekStart||'—'}</td>
+      <td><span style="background:#fff1ed;color:#F15D3B;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;">${esc(e.location||'—')}</span></td>
+      <td class="num" style="font-weight:700;color:#F15D3B;border-left:2px solid #fdd0c0;">${fmt3(e.cafe)}</td>
+      ${subCell((e.cafe_az_reg||0)+(e.cafe_az_cat||0))}
+      ${subCell((e.cafe_wt_reg||0)+(e.cafe_wt_cat||0))}
+      ${subCell((e.cafe_ay_reg||0)+(e.cafe_ay_cat||0))}
+      ${subCell((e.cafe_n_reg||0)+(e.cafe_n_cat||0))}
+      ${subCell((e.cafe_q_reg||0)+(e.cafe_q_cat||0))}
+      ${subCell((e.cafe_r_reg||0)+(e.cafe_r_cat||0))}
+      ${subCell((e.cafe_s_reg||0)+(e.cafe_s_cat||0))}
+      <td class="num" style="font-weight:700;color:#6366f1;border-left:2px solid #c4b5fd;">${fmt3(e.barista)}</td>
+      ${subCell(e.baristaRegister)}
+      ${subCell(e.baristaCatering)}
+      <td class="num" style="font-weight:700;color:#057a55;border-left:2px solid #86efac;">${fmt3(e.retailTotal||e.other)}</td>
+      ${subCell(e.retail)}
+      ${subCell(e.retailCatering)}
+      <td class="num" style="font-weight:600;color:#c27803;border-left:2px solid #fcd34d;">${fmt3(e.catering)}</td>
+      <td class="num" style="font-weight:800;color:#1a1a1a;border-left:2px solid #e5e7eb;">${fmt3(e.total)}</td>
+      <td class="num" style="color:#9ca3af;">${e.budget>0?fmt3(e.budget):'—'}</td>
+      <td class="num" style="color:${variance===null?'#ccc':variance>=0?'#057a55':'#e02424'};font-weight:600;">${variance!==null?(variance>=0?'✅ +':'⚠️ ')+'$'+Math.abs(variance).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}):'—'}</td>
+      <td class="num" style="color:${vsPrior===null?'#ccc':vsPrior>=0?'#057a55':'#e02424'};">${vsPrior!==null?(vsPrior>=0?'▲ ':'▼ ')+Math.abs(vsPrior).toFixed(1)+'%':'—'}</td>
+      <td style="font-size:11px;color:#6b7280;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(e.notes||'')}</td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-sm btn-outline" onclick="openSalesEntryModal('${e.id}')">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteSalesEntry('${e.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function exportSalesCSV() {
+  if (!weeklySales.length) { alert('No sales data to export'); return; }
+  const headers = ['Week #','Week Start','Week End','Location','Cafeteria','Barista','Other','Total Sales','Budget','Variance','Notes'];
+  const rows = weeklySales.map(e => [
+    e.weekNum||'', e.weekStart||'', e.weekEnd||'', e.location||'',
+    e.cafe||0, e.barista||0, e.other||0, e.total||0, e.budget||0,
+    e.budget > 0 ? (e.total||0)-(e.budget||0) : '',
+    (e.notes||'').replace(/,/g,';')
+  ]);
+  const csv = [headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='weekly-sales.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('Sales exported!', 'green');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+
+// ═══════════════════════════════════════════════════════
+// SHARED PERIOD FILTER
+// ═══════════════════════════════════════════════════════
+
+const PERIOD_TABS = ['dashboard','inventory','waste','transfer','purchasing','analytics','sales'];
+
+let periodState = {
+  year:  String(new Date().getFullYear()),
+  month: String(new Date().getMonth() + 1),  // default: current month (MTD)
+  week:    'all',   // 'all' or a weekStart ISO date string e.g. '2025-01-06'
+  weekEnd: null,    // ISO date string for week end (Sunday)
 };
+
+// ── Data helpers ──────────────────────────────────────
+function availableYears() {
+  const y = new Set([String(new Date().getFullYear())]);
+  wasteLog.forEach(e      => e.date        && y.add(e.date.split('-')[0]));
+  transferLog.forEach(e   => e.date        && y.add(e.date.split('-')[0]));
+  invoices.forEach(e      => e.invoiceDate && y.add(e.invoiceDate.split('-')[0]));
+  weeklySales.forEach(e   => e.weekStart   && y.add(e.weekStart.split('-')[0]));
+  Object.keys(closedWeeks).forEach(yr => y.add(yr));
+  Object.keys(analyticsData).forEach(yr => y.add(yr));
+  Object.keys(laborData).forEach(yr => y.add(yr));
+  return [...y].sort((a, b) => b - a);
+}
+
+function availableWeeks(year, month) {
+  // Generates Mon-Sun periods clamped to the month boundary.
+  // A week that starts before the 1st begins on the 1st (partial open).
+  // A week that ends after the last day ends on the last day (partial close).
+  // So every week's ws/we is strictly inside the month.
+  if (month === 'all') return [];
+
+  const yr = parseInt(year);
+  const mo = parseInt(month);
+
+  const firstDay = new Date(yr, mo - 1, 1);
+  const lastDay  = new Date(yr, mo, 0); // last day of month
+
+  const toISO = d => {
+    const y   = d.getFullYear();
+    const m   = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Monday on or before firstDay
+  const dow      = firstDay.getDay(); // 0=Sun
+  const daysBack = (dow === 0) ? 6 : dow - 1;
+  const firstMon = new Date(firstDay);
+  firstMon.setDate(firstDay.getDate() - daysBack);
+
+  const ordinals = ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6'];
+  const weeks = [];
+  let cursor = new Date(firstMon);
+  let idx = 0;
+
+  while (cursor <= lastDay) {
+    // Week start: clamp to first day of month
+    const rawStart = new Date(cursor);
+    const weekStart = rawStart < firstDay ? new Date(firstDay) : rawStart;
+
+    // Week end: Monday + 6 = Sunday, then clamp to last day of month
+    const rawEnd = new Date(cursor);
+    rawEnd.setDate(cursor.getDate() + 6);
+    const weekEnd = rawEnd > lastDay ? new Date(lastDay) : rawEnd;
+
+    const ws = toISO(weekStart);
+    const we = toISO(weekEnd);
+
+    // Build label — note partial weeks
+    const isPartialStart = rawStart < firstDay;   // week started last month
+    const isPartialEnd   = rawEnd   > lastDay;     // week ends next month
+    let label = ordinals[idx] || `Week ${idx + 1}`;
+    if (isPartialStart || isPartialEnd) label += ' (partial)';
+
+    weeks.push({ ws, we, label });
+    cursor.setDate(cursor.getDate() + 7);
+    idx++;
+  }
+
+  return weeks;
+}
+
+// ── Populate all period bars ──────────────────────────
+function updatePeriodBars() {
+  const years  = availableYears();
+  const months = MONTHS; // from analytics section
+  const weeks  = periodState.month !== 'all'
+    ? availableWeeks(periodState.year, periodState.month)
+    : [];
+
+  PERIOD_TABS.forEach(tab => {
+    const ySel = document.getElementById('pb-year-'  + tab);
+    const mSel = document.getElementById('pb-month-' + tab);
+    const wSel = document.getElementById('pb-week-'  + tab);
+    const badge= document.getElementById('pb-badge-' + tab);
+    if (!ySel) return;
+
+    // Year
+    ySel.innerHTML = years.map(y =>
+      `<option value="${y}" ${y === periodState.year ? 'selected' : ''}>${y}</option>`
+    ).join('');
+
+    // Month
+    mSel.innerHTML = '<option value="all">All Months</option>' +
+      months.map((n, i) =>
+        `<option value="${i+1}" ${String(i+1) === periodState.month ? 'selected' : ''}>${n}</option>`
+      ).join('');
+
+    // Week — disabled when month is 'all'
+    wSel.disabled = periodState.month === 'all';
+    wSel.style.opacity = periodState.month === 'all' ? '0.4' : '1';
+    wSel.innerHTML = '<option value="all">All Weeks</option>' +
+      weeks.map(({ ws, we, label }) =>
+        `<option value="${ws}|${we}" ${ws === periodState.week ? 'selected' : ''}>${label}</option>`
+      ).join('');
+
+    // Badge
+    if (badge) badge.textContent = periodLabel();
+  });
+}
+
+function periodLabel() {
+  if (periodState.week !== 'all') {
+    const wks = availableWeeks(periodState.year, periodState.month);
+    const match = wks.find(w => w.ws === periodState.week);
+    const lbl = match ? match.label : 'Wk';
+    return periodState.weekEnd
+      ? `${lbl}: ${periodState.week} – ${periodState.weekEnd}`
+      : lbl;
+  }
+  if (periodState.month !== 'all') return MONTHS[parseInt(periodState.month) - 1] + ' ' + periodState.year;
+  return 'YTD ' + periodState.year;
+}
+
+// ── Change handlers ───────────────────────────────────
+function onPeriodYear(val) {
+  periodState.year  = val;
+  periodState.month   = 'all';
+  periodState.week    = 'all';
+  periodState.weekEnd = null;
+  updatePeriodBars();
+  rerenderActiveTab();
+}
+function onPeriodMonth(val) {
+  periodState.month = val;
+  periodState.week    = 'all';
+  periodState.weekEnd = null;
+  updatePeriodBars();
+  rerenderActiveTab();
+}
+function onPeriodWeek(val) {
+  if (val === 'all') {
+    periodState.week    = 'all';
+    periodState.weekEnd = null;
+  } else {
+    const parts = val.split('|');
+    periodState.week    = parts[0];
+    periodState.weekEnd = parts[1] || null;
+  }
+  updatePeriodBars();
+  rerenderActiveTab();
+}
+
+function rerenderActiveTab() {
+  const active = document.querySelector('.tab-content.active');
+  if (!active) return;
+  const id = active.id.replace('tab-', '');
+  try {
+    if      (id === 'analytics')  { renderAnalytics(); renderPL(); }
+    else if (id === 'dashboard')   renderDashboard();
+    else if (id === 'inventory')   renderLocation(currentLoc);
+    else if (id === 'waste')       renderWasteLog();
+    else if (id === 'transfer')    renderTransferLog();
+    else if (id === 'purchasing')  renderPurchasing();
+    else if (id === 'sales')       renderSalesTab();
+  } catch(e) { console.error('Period re-render error:', e); }
+}
+
+// ── Filter helper ─────────────────────────────────────
+// Pass any ISO date string (YYYY-MM-DD). Returns true if it falls in periodState.
+function inPeriod(dateStr) {
+  if (!dateStr) return true;
+  const yr = dateStr.substring(0, 4);
+  const mo = parseInt(dateStr.substring(5, 7));
+  if (yr !== periodState.year) return false;
+  if (periodState.month !== 'all' && mo !== parseInt(periodState.month)) return false;
+  if (periodState.week !== 'all') {
+    const ws = new Date(periodState.week + 'T00:00:00');
+    const we = periodState.weekEnd
+      ? new Date(periodState.weekEnd + 'T00:00:00')
+      : new Date(ws); if (!periodState.weekEnd) we.setDate(ws.getDate() + 6);
+    const ed = new Date(dateStr + 'T00:00:00');
+    if (ed < ws || ed > we) return false;
+  }
+  return true;
+}
+
+
+// INIT
+// ═══════════════════════════════════
+try { updatePeriodBars(); } catch(e) { console.error('updatePeriodBars init error:', e); }
+try { renderAnalytics(); } catch(e) { console.error('renderAnalytics init error:', e); }
+try { renderPL(); } catch(e) { console.error('renderPL init error:', e); }
+
 
 </script>
 </body>
